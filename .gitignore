@@ -1,0 +1,70 @@
+conf/
+
+########
+# JAVA #
+########
+
+*.class
+
+########
+# JAVA #
+########
+
+target/
+
+# Package Files #
+*.jar
+*.war
+*.ear
+
+###########
+# ECLIPSE #
+###########
+
+*.pydevproject
+.project
+.metadata
+bin/**
+tmp/**
+tmp/**/*
+*.tmp
+*.bak
+*.swp
+*~.nib
+local.properties
+.classpath
+.settings/
+.loadpath
+
+# External tool builders
+.externalToolBuilders/
+
+# Locally stored "Eclipse launch configurations"
+*.launch
+
+# CDT-specific
+.cproject
+
+# PDT-specific
+.buildpath
+
+#################
+# INTELLIJ IDEA #
+#################
+
+build/
+test-logs/
+*.iml
+*.ipr
+*.iws
+.idea/
+
+#######
+# VIM #
+#######
+
+*.s[a-pr-w][a-z]
+*.un~
+Session.vim
+.netrwhist
+*~

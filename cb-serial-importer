@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+ARGS="$@"
+
+mvn -q exec:java -Dexec.mainClass=com.avira.bdo.chc.imp.CouchbaseSerialImporter -Dexec.args="$ARGS"
