@@ -19,10 +19,6 @@ import java.net.URI;
  */
 public class PageFileWriter implements Closeable {
 
-  private String destinationPath;
-  private Configuration configuration;
-
-  private FileSystem fileSystem;
   private OutputStream outputStream;
 
   private String keyDocumentDelimiter = "\0";
@@ -31,7 +27,7 @@ public class PageFileWriter implements Closeable {
   private static final Logger LOGGER = LoggerFactory.getLogger(PageFileWriter.class);
 
   public PageFileWriter(Configuration conf, String dirName, String baseName, int page) throws IOException {
-    this.configuration = conf;
+    String destinationPath;
     if (dirName.isEmpty()) {
       // If no dirName is provided write the file in current directory.
       destinationPath = baseName + "-" + String.format("%05d", page);
@@ -40,7 +36,7 @@ public class PageFileWriter implements Closeable {
     }
 
     // Get the file system.
-    fileSystem = FileSystem.get(URI.create(destinationPath), conf);
+    FileSystem fileSystem = FileSystem.get(URI.create(destinationPath), conf);
 
     // Get an OutputStream for the output file.
     Path path = new Path(destinationPath);
@@ -50,8 +46,8 @@ public class PageFileWriter implements Closeable {
 
   /**
    * Write a Couchbase document
-   * @param key
-   * @param document
+   * @param key Couchbase document ID
+   * @param document Couchbase document value
    * @throws IOException
    */
   public void write(String key, String document) throws IOException {

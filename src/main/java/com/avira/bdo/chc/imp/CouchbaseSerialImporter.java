@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 public class CouchbaseSerialImporter {
@@ -57,22 +58,83 @@ public class CouchbaseSerialImporter {
 
     CouchbaseSerialImporter importer = new CouchbaseSerialImporter(couchbaseUrl, couchbaseBucket, couchbasePassword);
     try {
-      importer.start(designDoc, viewName, viewKey, docsPerPage, destinationDir);
+//      importer.start(designDoc, viewName, viewKey, docsPerPage, destinationDir);
+      List<String> splits = importer.printSplits(designDoc, viewName, viewKey, 10);
+      LOGGER.info("___________________________________");
+      importer.printRowByUsingSplits(designDoc, viewName, viewKey, 10, splits);
     } catch (IOException e) {
       LOGGER.error(ExceptionUtils.getStackTrace(e));
     }
   }
 
-  public void start(String designDoc, String viewName, String viewKey, int docsPerPage, String destinationDir) throws IOException {
-    LOGGER.info("Connecting to Couchbase...");
-    List<URI> nodes = new ArrayList<URI>(3);
-    nodes.add(URI.create(couchbaseUrl));
-    try {
-      couchbaseClient = new CouchbaseClient(nodes, couchbaseBucket, couchbasePassword);
-      LOGGER.info("Connected to Couchbase.");
-    } catch (IOException e) {
-      LOGGER.error(ExceptionUtils.getStackTrace(e));
+  public void printRowByUsingSplits(String designDoc, String viewName, String viewKey, int splitSize, List<String> splits)
+      throws IOException {
+    connectToCouchbase();
+
+    View view = couchbaseClient.getView(designDoc, viewName);
+    ViewResponse response;
+    int count = 0;
+
+    for (int i = 0; i < splits.size(); i++) {
+      Query query = new Query();
+      query.setKey(viewKey);
+      query.setIncludeDocs(false);
+      query.setStartkeyDocID(splits.get(i));
+      query.setLimit(splitSize);
+
+      response = couchbaseClient.query(view, query);
+      for (ViewRow row : response) {
+        LOGGER.info(row.getId());
+        count++;
+      }
     }
+
+    LOGGER.info("Disconnecting from Couchbase...");
+    couchbaseClient.shutdown();
+
+    LOGGER.info("Total number of row is " + count + ".");
+  }
+
+  public List<String> printSplits(String designDoc, String viewName, String viewKey, int splitSize) throws IOException {
+    connectToCouchbase();
+
+    View view = couchbaseClient.getView(designDoc, viewName);
+    ViewResponse response;
+    Iterator<ViewRow> rowIt;
+
+    String startkeyDocId = "\0";
+    ArrayList<String> splits = new ArrayList<String>();
+    splits.add(startkeyDocId);
+    LOGGER.info("Split start key: " + startkeyDocId);
+
+    while (true) {
+      Query query = new Query();
+      query.setKey(viewKey);
+      query.setIncludeDocs(false);
+      query.setStartkeyDocID(startkeyDocId);
+      query.setSkip(splitSize);
+      query.setLimit(1);
+
+      response = couchbaseClient.query(view, query);
+      rowIt = response.iterator();
+      if (rowIt.hasNext()) {
+        startkeyDocId = rowIt.next().getId();
+        splits.add(startkeyDocId);
+        LOGGER.info("Split start key: " + startkeyDocId);
+      } else {
+        break;
+      }
+    }
+
+    LOGGER.info("Disconnecting from Couchbase...");
+    couchbaseClient.shutdown();
+
+    return splits;
+  }
+
+  public void start(String designDoc, String viewName, String viewKey, int docsPerPage, String destinationDir)
+      throws IOException {
+    connectToCouchbase();
 
     // Create the Hadoop configuration object.
     Configuration conf = new Configuration();
@@ -117,5 +179,18 @@ public class CouchbaseSerialImporter {
 
     LOGGER.info("Disconnecting from Couchbase...");
     couchbaseClient.shutdown();
+  }
+
+  protected void connectToCouchbase() throws IOException {
+    LOGGER.info("Connecting to Couchbase...");
+    List<URI> nodes = new ArrayList<URI>(3);
+    nodes.add(URI.create(couchbaseUrl));
+    try {
+      couchbaseClient = new CouchbaseClient(nodes, couchbaseBucket, couchbasePassword);
+      LOGGER.info("Connected to Couchbase.");
+    } catch (IOException e) {
+      LOGGER.error(ExceptionUtils.getStackTrace(e));
+      throw e;
+    }
   }
 }
