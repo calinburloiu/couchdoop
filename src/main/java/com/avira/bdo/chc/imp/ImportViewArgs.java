@@ -1,15 +1,18 @@
 package com.avira.bdo.chc.imp;
 
-import com.avira.bdo.chc.Args;
+import com.avira.bdo.chc.ArgsException;
+import com.avira.bdo.chc.CouchbaseArgs;
+import com.avira.bdo.chc.ImportExportTool;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.util.StringUtils;
-
-import java.util.Arrays;
 
 /**
  * {@link com.avira.bdo.chc.Args} implementation which holds Couchbase view import tool settings.
  */
-public class ImportViewArgs extends Args {
+public class ImportViewArgs extends CouchbaseArgs {
 
   private String designDocumentName;
 
@@ -17,26 +20,65 @@ public class ImportViewArgs extends Args {
 
   private String[] viewKeys;
 
-  private int documentsPerPage;
+  private String output;
 
-  public static final String PROPERTY_DESIGN_DOC_NAME = "couchbase.designDoc.name";
-  public static final String PROPERTY_VIEW_NAME = "couchbase.view.name";
-  public static final String PROPERTY_VIEW_KEYS = "couchbase.view.keys";
-  public static final String PROPERTY_DOCS_PER_PAGE = "couchbase.view.docsPerPage";
+  private int documentsPerPage;
+  private String docDelimiter;
+  private String rowDelimiter;
+
+  public static final ArgDef ARG_DESIGNDOC_NAME = new ArgDef('d', "couchbase.designDoc.name");
+  public static final ArgDef ARG_VIEW_NAME = new ArgDef('v', "couchbase.view.name");
+  public static final ArgDef ARG_VIEW_KEYS = new ArgDef('k', "couchbase.view.keys");
+  public static final ArgDef ARG_OUTPUT = new ArgDef('o', "output");
+  public static final ArgDef ARG_DOCS_PER_PAGE = new ArgDef('P', "couchbase.view.docsPerPage");
 
   public ImportViewArgs(Configuration hadoopConfiguration) {
     super(hadoopConfiguration);
   }
 
+  public ImportViewArgs(Configuration hadoopConfiguration, String[] cliArgs) throws ArgsException {
+    super(hadoopConfiguration, cliArgs);
+  }
+
   @Override
-  public void loadHadoopConfiguration(Configuration hadoopConfiguration) {
-    super.loadHadoopConfiguration(hadoopConfiguration);
+  protected Options getCliOptions() {
+    Options options = super.getCliOptions();
 
-    designDocumentName = hadoopConfiguration.get(PROPERTY_DESIGN_DOC_NAME);
-    viewName = hadoopConfiguration.get(PROPERTY_VIEW_NAME);
+    addOption(options, ARG_DESIGNDOC_NAME, true, true,
+        "(required) name of the design document");
+    addOption(options, ARG_VIEW_NAME, true, true,
+        "(required) name of the view");
+    addOption(options, ARG_VIEW_KEYS, true, true,
+        "(required) semicolon separated list of view keys (in JSON format) which are going to be distributed to mappers");
+    addOption(options, ARG_OUTPUT, true, true,
+        "(required) HDFS output directory");
+    addOption(options, ARG_DOCS_PER_PAGE, true, false,
+        "buffer of documents which are going to be retrieved at once at a mapper; defaults to 1024");
+
+    return options;
+  }
+
+  @Override
+  public void loadFromHadoopConfiguration() {
+    super.loadFromHadoopConfiguration();
+
+    designDocumentName = hadoopConfiguration.get(ARG_DESIGNDOC_NAME.getPropertyName());
+    viewName = hadoopConfiguration.get(ARG_VIEW_NAME.getPropertyName());
     viewKeys = getViewKeys(hadoopConfiguration);
+    output = hadoopConfiguration.get(ARG_OUTPUT.getPropertyName());
 
-    documentsPerPage = hadoopConfiguration.getInt(PROPERTY_DOCS_PER_PAGE, 1024);
+    documentsPerPage = hadoopConfiguration.getInt(ARG_DOCS_PER_PAGE.getPropertyName(), 1024);
+  }
+
+  @Override
+  protected void loadCliArgsIntoHadoopConfiguration(CommandLine cl) {
+    super.loadCliArgsIntoHadoopConfiguration(cl);
+
+    setPropertyFromCliArg(cl, ARG_DESIGNDOC_NAME);
+    setPropertyFromCliArg(cl, ARG_VIEW_NAME);
+    setPropertyFromCliArg(cl, ARG_VIEW_KEYS);
+    setPropertyFromCliArg(cl, ARG_OUTPUT);
+    setPropertyFromCliArg(cl, ARG_DOCS_PER_PAGE);
   }
 
   public String getDesignDocumentName() {
@@ -52,20 +94,22 @@ public class ImportViewArgs extends Args {
   }
 
   public static String[] getViewKeys(Configuration hadoopConfiguration) {
-    return StringUtils.split(hadoopConfiguration.get(PROPERTY_VIEW_KEYS), '\\', ';');
+    return StringUtils.split(hadoopConfiguration.get(ARG_VIEW_KEYS.getPropertyName()), '\\', ';');
+  }
+
+  public String getOutput() {
+    return output;
   }
 
   public int getDocumentsPerPage() {
     return documentsPerPage;
   }
 
-  @Override
-  public String toString() {
-    return "ImportViewArgs{" +
-      "designDocumentName='" + designDocumentName + '\'' +
-      ", viewName='" + viewName + '\'' +
-      ", viewKeys=" + Arrays.toString(viewKeys) +
-      ", documentsPerPage=" + documentsPerPage +
-      '}';
+  public String getDocDelimiter() {
+    return docDelimiter;
+  }
+
+  public String getRowDelimiter() {
+    return rowDelimiter;
   }
 }

@@ -1,11 +1,14 @@
 package com.avira.bdo.chc;
 
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.util.StringUtils;
 
 import java.net.URI;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -17,26 +20,52 @@ public class CouchbaseArgs extends Args {
   private String bucket;
   private String password;
 
-  public static final String PROPERTY_COUCHBASE_URLS = "couchbase.urls";
-  public static final String PROPERTY_COUCHBASE_BUCKET = "couchbase.bucket";
-  public static final String PROPERTY_COUCHBASE_PASSWORD = "couchbase.password";
+  public static final ArgDef ARG_COUCHBASE_URLS = new ArgDef('h', "couchbase.urls");
+  public static final ArgDef ARG_COUCHBASE_BUCKET = new ArgDef('b', "couchbase.bucket");
+  public static final ArgDef ARG_COUCHBASE_PASSWORD = new ArgDef('p', "couchbase.password");
 
   public CouchbaseArgs(Configuration hadoopConfiguration) {
     super(hadoopConfiguration);
   }
 
-  @Override
-  public void loadHadoopConfiguration(Configuration hadoopConfiguration) {
-    super.loadHadoopConfiguration(hadoopConfiguration);
+  public CouchbaseArgs(Configuration hadoopConfiguration, String[] cliArgs) throws ArgsException {
+    super(hadoopConfiguration, cliArgs);
+  }
 
-    String[] urlStrings = StringUtils.split(hadoopConfiguration.get(PROPERTY_COUCHBASE_URLS));
-    urls = new ArrayList<URI>();
-    for (String urlString: urlStrings) {
-      urls.add(URI.create(urlString));
+  @Override
+  protected Options getCliOptions() {
+    Options options = new Options();
+
+    addOption(options, ARG_COUCHBASE_URLS, true, true,
+      "(required) comma separated URL list of one or more Couchbase nodes from the cluster");
+    addOption(options, ARG_COUCHBASE_BUCKET, true, true,
+      "(required) bucket name in the cluster you wish to use");
+    addOption(options, ARG_COUCHBASE_PASSWORD, true, true,
+      "(required) password for the bucket");
+
+    return options;
+  }
+
+  @Override
+  public void loadFromHadoopConfiguration() {
+    String rawUrls = hadoopConfiguration.get(ARG_COUCHBASE_URLS.getPropertyName());
+    if (rawUrls != null) {
+      urls = new ArrayList<URI>();
+      String[] urlStrings = StringUtils.split(hadoopConfiguration.get(ARG_COUCHBASE_URLS.getPropertyName()));
+      for (String urlString: urlStrings) {
+        urls.add(URI.create(urlString));
+      }
     }
 
-    bucket = hadoopConfiguration.get(PROPERTY_COUCHBASE_BUCKET);
-    password = hadoopConfiguration.get(PROPERTY_COUCHBASE_PASSWORD);
+    bucket = hadoopConfiguration.get(ARG_COUCHBASE_BUCKET.getPropertyName());
+    password = hadoopConfiguration.get(ARG_COUCHBASE_PASSWORD.getPropertyName());
+  }
+
+  @Override
+  protected void loadCliArgsIntoHadoopConfiguration(CommandLine cl) {
+    setPropertyFromCliArg(cl, ARG_COUCHBASE_URLS);
+    setPropertyFromCliArg(cl, ARG_COUCHBASE_BUCKET);
+    setPropertyFromCliArg(cl, ARG_COUCHBASE_PASSWORD);
   }
 
   public List<URI> getUrls() {
@@ -49,14 +78,5 @@ public class CouchbaseArgs extends Args {
 
   public String getPassword() {
     return password;
-  }
-
-  @Override
-  public String toString() {
-    return "CouchbaseArgs{" +
-      "urls=" + urls +
-      ", bucket='" + bucket + '\'' +
-      ", password='" + password + '\'' +
-      '}';
   }
 }

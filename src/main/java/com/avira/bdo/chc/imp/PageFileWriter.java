@@ -21,7 +21,7 @@ public class PageFileWriter implements Closeable {
 
   private OutputStream outputStream;
 
-  private String keyDocumentDelimiter = "\0";
+  private String keyDocumentDelimiter = "\t";
   private String rowDelimiter = "\n";
 
   private static final Logger LOGGER = LoggerFactory.getLogger(PageFileWriter.class);

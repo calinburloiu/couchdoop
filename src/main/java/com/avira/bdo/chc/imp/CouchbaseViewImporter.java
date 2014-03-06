@@ -1,6 +1,6 @@
 package com.avira.bdo.chc.imp;
 
-import com.avira.bdo.chc.CouchbaseArgs;
+import com.avira.bdo.chc.ArgsException;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.Path;
@@ -22,31 +22,21 @@ public class CouchbaseViewImporter extends Configured implements Tool {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(CouchbaseViewImporter.class);
 
-  public static void main(String[] args) throws Exception {
-    int exitCode = ToolRunner.run(new CouchbaseViewImporter(), args);
+  public void start(String[] args) throws Exception {
+    int exitCode = ToolRunner.run(this, args);
     System.exit(exitCode);
   }
 
   public int run(String[] args) throws Exception {
-    String output = "";
-
-    // Check arguments.
-    if (args.length >= 1) {
-      output = args[0];
-    } else {
-      LOGGER.error(
-        "Usage: $EXE <-D <couchbase_args>>* <-D <import_view_args>>* <destination_dir>");
+    Configuration conf = getConf();
+    ImportViewArgs importViewArgs;
+    try {
+      importViewArgs = new ImportViewArgs(conf, args);
+    } catch (ArgsException e) {
       return 1;
     }
 
-    Configuration conf = getConf();
-
-    CouchbaseArgs couchbaseArgs = new CouchbaseArgs(conf);
-    ImportViewArgs importViewArgs = new ImportViewArgs(conf);
-    LOGGER.info(couchbaseArgs.toString());
-    LOGGER.info(importViewArgs.toString());
-
-    Job job = configureJob(conf, output);
+    Job job = configureJob(conf, importViewArgs.getOutput());
 
     return job.waitForCompletion(true) ? 0 : 2;
   }
@@ -59,7 +49,6 @@ public class CouchbaseViewImporter extends Configured implements Tool {
     Job job = new Job(conf);
     job.setJarByClass(CouchbaseViewImporter.class);
 
-    // TODO Create a static method in CouchbaseViewInputFormat which configures all necessary parameters.
     // Input
     job.setInputFormatClass(CouchbaseViewInputFormat.class);
 
