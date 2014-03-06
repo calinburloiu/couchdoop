@@ -20,7 +20,12 @@ import java.util.Iterator;
 import java.util.List;
 
 /**
- * TODO Document CouchbaseViewInputFormat.
+ * This input format reads documents from a Couchbase view queried by a list of view keys.
+ * <p>
+ * Instances emit document IDs as key and the corresponding Couchbase {@link com.couchbase.client.protocol.views.ViewRow}
+ * as value.
+ * <p>
+ * The view keys passed as input are distributed evenly across a configurable number of Mapper tasks.
  */
 public class CouchbaseViewInputFormat extends InputFormat<Text, ViewRow> {
 
