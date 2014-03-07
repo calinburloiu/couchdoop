@@ -2,9 +2,6 @@ package com.avira.bdo.chc.exp;
 
 import com.avira.bdo.chc.ArgsException;
 import com.couchbase.client.CouchbaseClient;
-import com.couchbase.client.StoreType;
-import org.apache.hadoop.io.Text;
-import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapreduce.*;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputCommitter;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
@@ -20,45 +17,42 @@ import java.util.List;
  *
  * <p>Keys received correspond to the Couchbase keys and values received to Couchbase documents.</p>
  */
-public class CouchbaseOutputFormat extends OutputFormat<Text, Writable> {
+public class CouchbaseOutputFormat extends OutputFormat<String, CouchbaseAction> {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(CouchbaseOutputFormat.class);
 
-  public static class CouchbaseRecordWriter extends RecordWriter<Text, Writable> {
+  public static class CouchbaseRecordWriter extends RecordWriter<String, CouchbaseAction> {
     
     private CouchbaseClient couchbaseClient;
 
-    private StoreType storeType = StoreType.SET;
-    
-    public CouchbaseRecordWriter(List<URI> urls, String bucket, String password, StoreType storeType) throws IOException {
+    public CouchbaseRecordWriter(List<URI> urls, String bucket, String password) throws IOException {
       LOGGER.info("Connecting to Couchbase...");
       couchbaseClient = new CouchbaseClient(urls, bucket, password);
       LOGGER.info("Connected to Couchbase.");
-
-      this.storeType = storeType;
     }
 
     @Override
-    public void write(Text key, Writable value) throws IOException, InterruptedException {
-      switch (storeType) {
+    public void write(String key, CouchbaseAction value) throws IOException, InterruptedException {
+      switch (value.getOperation()) {
         case SET:
-          couchbaseClient.set(key.toString(), value.toString());
+          couchbaseClient.set(key, value.getValue().toString());
           break;
         case ADD:
-          couchbaseClient.add(key.toString(), value.toString());
+          couchbaseClient.add(key, value.getValue().toString());
           break;
         case REPLACE:
-          couchbaseClient.replace(key.toString(), value.toString());
+          couchbaseClient.replace(key, value.getValue().toString());
           break;
         case APPEND:
-          couchbaseClient.append(key.toString(), value.toString());
+          couchbaseClient.append(key, value.getValue().toString());
           break;
         case PREPEND:
-          couchbaseClient.prepend(key.toString(), value.toString());
+          couchbaseClient.prepend(key, value.getValue().toString());
+          break;
+        case DELETE:
+          couchbaseClient.delete(key);
           break;
       }
-
-
     }
 
     @Override
@@ -68,7 +62,7 @@ public class CouchbaseOutputFormat extends OutputFormat<Text, Writable> {
     }
   }
 
-  public RecordWriter<Text, Writable> getRecordWriter(TaskAttemptContext context) throws IOException, InterruptedException {
+  public RecordWriter<String, CouchbaseAction> getRecordWriter(TaskAttemptContext context) throws IOException, InterruptedException {
     ExportArgs args;
     try {
       args = new ExportArgs(context.getConfiguration());
@@ -77,7 +71,7 @@ public class CouchbaseOutputFormat extends OutputFormat<Text, Writable> {
     }
 
     return new CouchbaseRecordWriter(args.getUrls(), args.getBucket(),
-        args.getPassword(), args.getStoreType());
+        args.getPassword());
   }
 
   @Override

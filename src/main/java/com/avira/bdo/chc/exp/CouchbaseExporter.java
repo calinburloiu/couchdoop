@@ -25,6 +25,8 @@ public class CouchbaseExporter extends Configured implements Tool {
     int exitCode = 0;
     try {
       exitCode = ToolRunner.run(this, args);
+    } catch (ArgsException e) {
+      throw e;
     } catch (Exception e) {
       LOGGER.error(ExceptionUtils.getStackTrace(e));
     }
@@ -36,11 +38,7 @@ public class CouchbaseExporter extends Configured implements Tool {
   public int run(String[] args) throws Exception {
     Configuration conf = getConf();
     ExportArgs exportArgs;
-    try {
-      exportArgs = new ExportArgs(conf, args);
-    } catch (ArgsException e) {
-      return 1;
-    }
+    exportArgs = new ExportArgs(conf, args);
 
     Job job;
     boolean exitStatus = true;

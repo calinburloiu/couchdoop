@@ -25,12 +25,7 @@ public class CouchbaseViewSerialImporter {
       throws ArgsException {
     Configuration conf = new Configuration();
     ImportViewArgs iva;
-    try {
-      iva = new ImportViewArgs(conf, args);
-    } catch (ArgsException e) {
-      System.exit(1);
-      return;
-    }
+    iva = new ImportViewArgs(conf, args);
 
     // Connect to couchbase and get the view.
     CouchbaseClient couchbaseClient;

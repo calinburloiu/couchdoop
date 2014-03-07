@@ -26,6 +26,8 @@ public class CouchbaseViewImporter extends Configured implements Tool {
     int exitCode = 0;
     try {
       exitCode = ToolRunner.run(this, args);
+    } catch (ArgsException e) {
+      throw e;
     } catch (Exception e) {
       LOGGER.error(ExceptionUtils.getStackTrace(e));
     }
@@ -37,11 +39,7 @@ public class CouchbaseViewImporter extends Configured implements Tool {
   public int run(String[] args) throws ArgsException {
     Configuration conf = getConf();
     ImportViewArgs importViewArgs;
-    try {
-      importViewArgs = new ImportViewArgs(conf, args);
-    } catch (ArgsException e) {
-      return 1;
-    }
+    importViewArgs = new ImportViewArgs(conf, args);
 
     Job job;
     boolean exitStatus = true;

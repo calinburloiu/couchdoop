@@ -2,11 +2,9 @@ package com.avira.bdo.chc.exp;
 
 import com.avira.bdo.chc.ArgsException;
 import com.avira.bdo.chc.CouchbaseArgs;
-import com.couchbase.client.StoreType;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
 import org.apache.hadoop.conf.Configuration;
-import org.omg.CORBA.ARG_IN;
 
 /**
  * {@link com.avira.bdo.chc.CouchbaseArgs} implementation which holds Couchbase export feature settings.
@@ -15,10 +13,10 @@ public class ExportArgs extends CouchbaseArgs {
 
   private String input;
 
-  private StoreType storeType;
+  private CouchbaseOperation operation;
 
   public static final ArgDef ARG_INPUT = new ArgDef('i', "input");
-  public static final ArgDef ARG_STORETYPE = new ArgDef('t', "couchbase.storeType");
+  public static final ArgDef ARG_OPERATION = new ArgDef('t', "couchbase.operation");
 
   public ExportArgs(Configuration hadoopConfiguration) throws ArgsException {
     super(hadoopConfiguration);
@@ -34,8 +32,8 @@ public class ExportArgs extends CouchbaseArgs {
 
     addOption(options, ARG_INPUT, true, true,
         "(required) HDFS input directory");
-    addOption(options, ARG_STORETYPE, true, false,
-      "one of Couchbase store operations: SET, ADD, REPLACE, APPEND, PREPEND; defaults to SET");
+    addOption(options, ARG_OPERATION, true, false,
+      "one of Couchbase store operations: SET, ADD, REPLACE, APPEND, PREPEND, DELETE; defaults to SET");
 
     return options;
   }
@@ -45,7 +43,7 @@ public class ExportArgs extends CouchbaseArgs {
     super.loadFromHadoopConfiguration();
 
     input = hadoopConfiguration.get(ARG_INPUT.getPropertyName());
-    storeType = getStoreType(hadoopConfiguration);
+    operation = getOperation(hadoopConfiguration);
   }
 
   @Override
@@ -53,7 +51,7 @@ public class ExportArgs extends CouchbaseArgs {
     super.loadCliArgsIntoHadoopConfiguration(cl);
 
     setPropertyFromCliArg(cl, ARG_INPUT);
-    setPropertyFromCliArg(cl, ARG_STORETYPE);
+    setPropertyFromCliArg(cl, ARG_OPERATION);
   }
 
   /**
@@ -67,26 +65,26 @@ public class ExportArgs extends CouchbaseArgs {
    * Reads Couchbase store operation from the Hadoop configuration type.
    * @return Couchbase store operation to be used
    */
-  public static StoreType getStoreType(Configuration hadoopConfiguration) throws ArgsException {
-    String strStoreType = hadoopConfiguration.get(ARG_STORETYPE.getPropertyName());
+  public static CouchbaseOperation getOperation(Configuration hadoopConfiguration) throws ArgsException {
+    String strCouchbaseOperation = hadoopConfiguration.get(ARG_OPERATION.getPropertyName());
 
     // Default value
-    if (strStoreType == null) {
-      return StoreType.SET;
+    if (strCouchbaseOperation == null) {
+      return CouchbaseOperation.SET;
     }
 
     try {
-      return StoreType.valueOf(strStoreType);
+      return CouchbaseOperation.valueOf(strCouchbaseOperation);
     } catch (IllegalArgumentException e) {
-      throw new ArgsException("Unrecognized store type '" + strStoreType +
-        "'. Please provide one of the following: SET, ADD, REPLACE, APPEND, PREPEND.", e);
+      throw new ArgsException("Unrecognized store type '" + strCouchbaseOperation +
+        "'. Please provide one of the following: SET, ADD, REPLACE, APPEND, PREPEND and DELETE.", e);
     }
   }
 
   /**
    * @return Couchbase store operation to be used
    */
-  public StoreType getStoreType() {
-    return storeType;
+  public CouchbaseOperation getOperation() {
+    return operation;
   }
 }
