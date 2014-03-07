@@ -24,7 +24,7 @@ public class CouchbaseArgs extends Args {
   public static final ArgDef ARG_COUCHBASE_BUCKET = new ArgDef('b', "couchbase.bucket");
   public static final ArgDef ARG_COUCHBASE_PASSWORD = new ArgDef('p', "couchbase.password");
 
-  public CouchbaseArgs(Configuration hadoopConfiguration) {
+  public CouchbaseArgs(Configuration hadoopConfiguration) throws ArgsException {
     super(hadoopConfiguration);
   }
 
@@ -47,7 +47,7 @@ public class CouchbaseArgs extends Args {
   }
 
   @Override
-  public void loadFromHadoopConfiguration() {
+  public void loadFromHadoopConfiguration() throws ArgsException {
     String rawUrls = hadoopConfiguration.get(ARG_COUCHBASE_URLS.getPropertyName());
     if (rawUrls != null) {
       urls = new ArrayList<URI>();
@@ -62,7 +62,7 @@ public class CouchbaseArgs extends Args {
   }
 
   @Override
-  protected void loadCliArgsIntoHadoopConfiguration(CommandLine cl) {
+  protected void loadCliArgsIntoHadoopConfiguration(CommandLine cl) throws ArgsException {
     setPropertyFromCliArg(cl, ARG_COUCHBASE_URLS);
     setPropertyFromCliArg(cl, ARG_COUCHBASE_BUCKET);
     setPropertyFromCliArg(cl, ARG_COUCHBASE_PASSWORD);

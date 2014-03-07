@@ -4,6 +4,7 @@ import org.apache.commons.cli.*;
 import org.apache.hadoop.conf.Configuration;
 
 import java.util.Arrays;
+import java.util.Comparator;
 
 /**
  * Contract for JavaBeans which hold information read from the properties of a Hadoop
@@ -39,7 +40,7 @@ public abstract class Args {
   public Args() {
   }
 
-  public Args(Configuration hadoopConfiguration) {
+  public Args(Configuration hadoopConfiguration) throws ArgsException {
     this.hadoopConfiguration = hadoopConfiguration;
 
     loadFromHadoopConfiguration();
@@ -61,6 +62,7 @@ public abstract class Args {
     } catch (ParseException e) {
       System.err.println(e.getMessage());
       HelpFormatter formatter = new HelpFormatter();
+      formatter.setOptionComparator(null);
       formatter.printHelp("...", getCliOptions());
 
       throw new ArgsException(e);
@@ -80,7 +82,7 @@ public abstract class Args {
   /**
    * Populates JavaBean instance fields with data from Hadoop configuration member.
    */
-  protected abstract void loadFromHadoopConfiguration();
+  protected abstract void loadFromHadoopConfiguration() throws ArgsException;
 
   /**
    * Queries a {@link org.apache.commons.cli.CommandLine} instance and populates the Hadoop configuration member.
@@ -88,7 +90,7 @@ public abstract class Args {
    * @param cl an object which contains user's parsed arguments
    * @throws ParseException
    */
-  protected abstract void loadCliArgsIntoHadoopConfiguration(CommandLine cl);
+  protected abstract void loadCliArgsIntoHadoopConfiguration(CommandLine cl) throws ArgsException;
 
   public void setHadoopConfiguration(Configuration hadoopConfiguration) {
     this.hadoopConfiguration = hadoopConfiguration;

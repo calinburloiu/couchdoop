@@ -22,7 +22,7 @@ public class CouchbaseViewSerialImporter {
   private static final Logger LOGGER = LoggerFactory.getLogger(CouchbaseViewSerialImporter.class);
 
   public void start(String[] args)
-      throws IOException {
+      throws ArgsException {
     Configuration conf = new Configuration();
     ImportViewArgs iva;
     try {
@@ -33,7 +33,13 @@ public class CouchbaseViewSerialImporter {
     }
 
     // Connect to couchbase and get the view.
-    CouchbaseClient couchbaseClient = connectToCouchbase(iva.getUrls(), iva.getBucket(), iva.getPassword());
+    CouchbaseClient couchbaseClient;
+    try {
+      couchbaseClient = connectToCouchbase(iva.getUrls(), iva.getBucket(), iva.getPassword());
+    } catch (IOException e) {
+      LOGGER.error(ExceptionUtils.getStackTrace(e));
+      return;
+    }
     View view = couchbaseClient.getView(iva.getDesignDocumentName(), iva.getViewName());
 
     int pageNo = 0;
@@ -72,9 +78,15 @@ public class CouchbaseViewSerialImporter {
           writer.close();
           pageNo++;
         }
+      } catch (IOException e) {
+        LOGGER.error(ExceptionUtils.getStackTrace(e));
       } finally {
         if (writer != null) {
-          writer.close();
+          try {
+            writer.close();
+          } catch (IOException e) {
+            LOGGER.error(ExceptionUtils.getStackTrace(e));
+          }
         }
       }
     }

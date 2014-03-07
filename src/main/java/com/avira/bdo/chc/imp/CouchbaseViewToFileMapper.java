@@ -10,7 +10,7 @@ import java.io.IOException;
 /**
  * Mapper class which maps each document retrieved from a Couchbase view key to text key-values.
  */
-public class CouchbaseViewMapper extends Mapper<Text, ViewRow, Text, Text> {
+public class CouchbaseViewToFileMapper extends Mapper<Text, ViewRow, Text, Text> {
 
   @Override
   protected void map(Text key, ViewRow value, Context context) throws IOException, InterruptedException {

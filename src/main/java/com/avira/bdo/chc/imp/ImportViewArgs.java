@@ -10,7 +10,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.util.StringUtils;
 
 /**
- * {@link com.avira.bdo.chc.Args} implementation which holds Couchbase view import tool settings.
+ * {@link com.avira.bdo.chc.CouchbaseArgs} implementation which holds Couchbase view import feature settings.
  */
 public class ImportViewArgs extends CouchbaseArgs {
 
@@ -32,7 +32,7 @@ public class ImportViewArgs extends CouchbaseArgs {
   public static final ArgDef ARG_OUTPUT = new ArgDef('o', "output");
   public static final ArgDef ARG_DOCS_PER_PAGE = new ArgDef('P', "couchbase.view.docsPerPage");
 
-  public ImportViewArgs(Configuration hadoopConfiguration) {
+  public ImportViewArgs(Configuration hadoopConfiguration) throws ArgsException {
     super(hadoopConfiguration);
   }
 
@@ -59,7 +59,7 @@ public class ImportViewArgs extends CouchbaseArgs {
   }
 
   @Override
-  public void loadFromHadoopConfiguration() {
+  public void loadFromHadoopConfiguration() throws ArgsException {
     super.loadFromHadoopConfiguration();
 
     designDocumentName = hadoopConfiguration.get(ARG_DESIGNDOC_NAME.getPropertyName());
@@ -71,7 +71,7 @@ public class ImportViewArgs extends CouchbaseArgs {
   }
 
   @Override
-  protected void loadCliArgsIntoHadoopConfiguration(CommandLine cl) {
+  protected void loadCliArgsIntoHadoopConfiguration(CommandLine cl) throws ArgsException {
     super.loadCliArgsIntoHadoopConfiguration(cl);
 
     setPropertyFromCliArg(cl, ARG_DESIGNDOC_NAME);

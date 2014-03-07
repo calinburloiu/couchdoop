@@ -1,5 +1,6 @@
 package com.avira.bdo.chc.imp;
 
+import com.avira.bdo.chc.ArgsException;
 import com.avira.bdo.chc.CouchbaseArgs;
 import com.couchbase.client.CouchbaseClient;
 import com.couchbase.client.protocol.views.*;
@@ -89,8 +90,14 @@ public class CouchbaseViewInputFormat extends InputFormat<Text, ViewRow> {
 
     public void initialize(InputSplit inputSplit, TaskAttemptContext context) throws IOException, InterruptedException {
       Configuration conf = context.getConfiguration();
-      CouchbaseArgs couchbaseArgs = new CouchbaseArgs(conf);
-      ImportViewArgs importViewArgs = new ImportViewArgs(conf);
+      CouchbaseArgs couchbaseArgs;
+      ImportViewArgs importViewArgs;
+      try {
+        couchbaseArgs = new CouchbaseArgs(conf);
+        importViewArgs = new ImportViewArgs(conf);
+      } catch (ArgsException e) {
+        throw new IllegalArgumentException(e);
+      }
 
       // Check args presence.
       if (couchbaseArgs.getUrls() == null || couchbaseArgs.getBucket() == null ||
