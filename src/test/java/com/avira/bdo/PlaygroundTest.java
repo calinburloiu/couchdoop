@@ -31,9 +31,9 @@ public class PlaygroundTest {
       System.out.println("opening");
       openFile("pom.xml");
     } catch (IOException e) {
-      System.err.println("error in test: " + e.getMessage());
+      System.err.println("error in com.avira.bdo.chc.test: " + e.getMessage());
     } finally {
-      System.out.println("finally in test");
+      System.out.println("finally in com.avira.bdo.chc.test");
       try {
         if (is != null) {
           System.out.println("closing");

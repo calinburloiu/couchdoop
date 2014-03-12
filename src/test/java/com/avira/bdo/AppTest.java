@@ -18,7 +18,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Unit test for simple App.
+ * Unit com.avira.bdo.chc.test for simple App.
  */
 public class AppTest {
   

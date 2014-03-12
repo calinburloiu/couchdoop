@@ -10,5 +10,9 @@ public enum CouchbaseOperation {
   APPEND,
   PREPEND,
 
-  DELETE
+  DELETE,
+
+  EXISTS,
+
+  NONE
 }

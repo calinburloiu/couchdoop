@@ -1,10 +1,13 @@
-package com.avira.bdo.chc.exp;
+package com.avira.bdo.chc.update;
 
 import com.avira.bdo.chc.ArgsException;
+import com.avira.bdo.chc.exp.CouchbaseAction;
+import com.avira.bdo.chc.exp.CouchbaseOutputFormat;
+import com.avira.bdo.chc.exp.ExportArgs;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
-import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.util.Tool;
@@ -14,12 +17,9 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
-/**
- * Instances of this class export key-values from HDFS files into documents from Couchbase.
- */
-public class CouchbaseExporter extends Configured implements Tool {
+public class BenchmarkUpdater extends Configured implements Tool {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(CouchbaseExporter.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(BenchmarkUpdater.class);
 
   public void start(String[] args) throws ArgsException {
     int exitCode = 0;
@@ -58,13 +58,13 @@ public class CouchbaseExporter extends Configured implements Tool {
     conf.setInt("mapred.max.tracker.failures", 20);
 
     Job job = new Job(conf);
-    job.setJarByClass(CouchbaseExporter.class);
+    job.setJarByClass(BenchmarkUpdater.class);
 
     // Input
     FileInputFormat.setInputPaths(job, input);
 
     // Mapper
-    job.setMapperClass(TsvToCouchbaseMapper.class);
+    job.setMapperClass(BenchmarkUpdateMapper.class);
     job.setMapOutputKeyClass(String.class);
     job.setMapOutputValueClass(CouchbaseAction.class);
 

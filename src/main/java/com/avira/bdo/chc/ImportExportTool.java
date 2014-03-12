@@ -3,6 +3,7 @@ package com.avira.bdo.chc;
 import com.avira.bdo.chc.exp.CouchbaseExporter;
 import com.avira.bdo.chc.imp.CouchbaseViewImporter;
 import com.avira.bdo.chc.imp.CouchbaseViewSerialImporter;
+import com.avira.bdo.chc.update.BenchmarkUpdater;
 
 import java.util.Arrays;
 
@@ -33,6 +34,9 @@ public class ImportExportTool {
       } else if (tool.equals("export")) {
         CouchbaseExporter exporter = new CouchbaseExporter();
         exporter.start(tailArgs);
+      } else if (tool.equals("update")) {
+        BenchmarkUpdater updater = new BenchmarkUpdater();
+        updater.start(tailArgs);
       } else {
         printUsage();
       }

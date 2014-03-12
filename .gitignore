@@ -53,7 +53,7 @@ local.properties
 #################
 
 build/
-test-logs/
+com.avira.bdo.chc.test-logs/
 *.iml
 *.ipr
 *.iws

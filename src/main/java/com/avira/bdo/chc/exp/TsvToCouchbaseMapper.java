@@ -32,13 +32,17 @@ public class TsvToCouchbaseMapper extends Mapper<LongWritable, Text, String, Cou
   protected void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
     String docId;
     CouchbaseAction action;
+    String[] pair = value.toString().split("\t");
 
     if (operation.equals(CouchbaseOperation.DELETE)) {
-      docId = value.toString();
+      if (pair.length <= 1) {
+        context.getCounter(Error.LINES_WITH_WRONG_COLUMNS_COUNT).increment(1);
+        return;
+      }
+
+      docId = pair[0];
       action = CouchbaseAction.createDeleteAction();
     } else {
-      String[] pair = value.toString().split("\t");
-
       // Skip error line.
       if (pair.length != 2) {
         context.getCounter(Error.LINES_WITH_WRONG_COLUMNS_COUNT).increment(1);

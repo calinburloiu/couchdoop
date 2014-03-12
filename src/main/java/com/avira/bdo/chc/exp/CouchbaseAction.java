@@ -39,6 +39,14 @@ public class CouchbaseAction {
     return new CouchbaseAction(CouchbaseOperation.DELETE, null);
   }
 
+  public static CouchbaseAction createNoneAction() {
+    return new CouchbaseAction(CouchbaseOperation.NONE, null);
+  }
+
+  public static CouchbaseAction createExistsAction() {
+    return new CouchbaseAction(CouchbaseOperation.EXISTS, null);
+  }
+
   public CouchbaseOperation getOperation() {
     return operation;
   }
@@ -53,5 +61,13 @@ public class CouchbaseAction {
 
   public void setValue(Object value) {
     this.value = value;
+  }
+
+  @Override
+  public String toString() {
+    return "CouchbaseAction{" +
+      "operation=" + operation +
+      ", value=" + value +
+      '}';
   }
 }
