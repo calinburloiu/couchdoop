@@ -15,16 +15,18 @@ public abstract class CouchbaseSerialUpdateMapper<KEYIN, VALUEIN, T> extends Cou
   @Override
   protected void map(KEYIN hKey, VALUEIN hValue, Context context) throws IOException, InterruptedException {
     // Transform the data received from the InputFormat.
-    HadoopInput<T> hadoopInput = transform(hKey, hValue);
+    HadoopInput<T> hadoopInput = transform(hKey, hValue, context);
+    if (hadoopInput == null) {
+      return;
+    }
 
     // Retrieve the current Couchbase document.
     Object couchbaseInputValue = couchbaseClient.get(hadoopInput.getCouchbaseKey());
 
     // Compute the Couchbase operation and the new output document.
-    CouchbaseAction action = merge(hadoopInput.getHadoopData(), couchbaseInputValue);
+    CouchbaseAction action = merge(hadoopInput.getHadoopData(), couchbaseInputValue, context);
 
     // Write the newly updated document back to Couchbase.
-//    throw new RuntimeException("Writing " + hadoopInput.getCouchbaseKey() + ", " + action);
     context.write(hadoopInput.getCouchbaseKey(), action);
   }
 }

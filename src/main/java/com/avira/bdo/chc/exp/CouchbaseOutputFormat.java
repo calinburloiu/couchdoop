@@ -72,32 +72,35 @@ public class CouchbaseOutputFormat extends OutputFormat<String, CouchbaseAction>
       OperationStatus status;
 
       // Store in Couchbase by doing exponential back-off.
-      try {
+      do {
+        future = store(value.getOperation(), key, value.getValue());
+        if (future == null) {
+          return;
+        }
 
-        do {
-          future = store(value.getOperation(), key, value.getValue());
-          status = future.getStatus();
-
-          if (status.isSuccess() || !status.getMessage().equals("Temporary failure") ||
-              backoffExp >= EXP_BACKOFF_MAX_TRIES) {
-            break;
-          }
-
-          int retryInterval = Math.min((int) Math.pow(2, backoffExp), 1000);
-          Thread.sleep(retryInterval);
-          expBackoffCounters[backoffExp]++;
-
-          backoffExp++;
-        } while (status.getMessage().equals("Temporary failure"));
-
-        boolean res = future.get();
+        // FIXME EXISTS does not work.
         // If the operation is exists, count non existent touched keys.
+        boolean res;
+        try {
+          res = future.get();
+        } catch (ExecutionException e) {
+          throw new RuntimeException(e);
+        }
         if (!res && value.getOperation().equals(CouchbaseOperation.EXISTS)) {
           nonExistentTouchedKeys++;
         }
-      } catch (ExecutionException e) {
-        throw new RuntimeException(e);
-      }
+
+        if (future.getStatus().isSuccess() || !future.getStatus().getMessage().equals("Temporary failure") ||
+            backoffExp >= EXP_BACKOFF_MAX_TRIES) {
+          break;
+        }
+
+        int retryInterval = Math.min((int) Math.pow(2, backoffExp), EXP_BACKOFF_MAX_RETRY_INTERVAL);
+        Thread.sleep(retryInterval);
+        expBackoffCounters[backoffExp]++;
+
+        backoffExp++;
+      } while (true);
     }
 
     @Override

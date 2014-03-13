@@ -7,9 +7,11 @@ import org.apache.hadoop.io.Text;
 
 import java.io.IOException;
 
-public class BenchmarkUpdateMapper extends CouchbaseSerialUpdateMapper<LongWritable, Text, Object> {
+public class BenchmarkUpdateMapper extends CouchbaseUpdateMapper<LongWritable, Text, Object> {
 
   ObjectMapper objMapper = new ObjectMapper();
+
+  public static enum Counters { NULL_DOCS }
 
   private static class Bean {
     private String letters;
@@ -41,14 +43,17 @@ public class BenchmarkUpdateMapper extends CouchbaseSerialUpdateMapper<LongWrita
   }
 
   @Override
-  protected HadoopInput<Object> transform(LongWritable hKey, Text hValue) {
-    return new HadoopInput<Object>(hValue.toString(), null);
+  protected HadoopInput<Object> transform(LongWritable hKey, Text hValue, Context context) {
+    String[] splits = hValue.toString().split("\t");
+
+    return new HadoopInput<Object>(splits[0], null);
   }
 
   @Override
-  protected CouchbaseAction merge(Object o, Object cbInputValue) {
+  protected CouchbaseAction merge(Object o, Object cbInputValue, Context context) {
     if (cbInputValue == null) {
-      throw new RuntimeException("Couchbase value is null.");
+      context.getCounter(Counters.NULL_DOCS).increment(1);
+      return CouchbaseAction.createNoneAction();
     }
 
     try {
