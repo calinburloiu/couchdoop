@@ -19,6 +19,7 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.CancellationException;
 
 /**
  * This input format reads documents from a Couchbase view queried by a list of view keys.
@@ -86,6 +87,8 @@ public class CouchbaseViewInputFormat extends InputFormat<Text, ViewRow> {
 
     private boolean finished = false;
 
+    public static final int CONNECT_RETRIES = 25;
+
     private static final Logger LOGGER = LoggerFactory.getLogger(CouchbaseViewRecordReader.class);
 
     public void initialize(InputSplit inputSplit, TaskAttemptContext context) throws IOException, InterruptedException {
@@ -105,23 +108,36 @@ public class CouchbaseViewInputFormat extends InputFormat<Text, ViewRow> {
         throw new IllegalArgumentException("Not all Couchbase arguments are present: " + couchbaseArgs);
       }
 
-      // Connect to Couchbase.
-      couchbaseClient =
-        connectToCouchbase(couchbaseArgs.getUrls(), couchbaseArgs.getBucket(), couchbaseArgs.getPassword());
+      // Connect to Couchbase. Retry a few time on cancellation.
+      for (int i = 0; i < CONNECT_RETRIES; i++) {
+        couchbaseClient =
+          connectToCouchbase(couchbaseArgs.getUrls(), couchbaseArgs.getBucket(), couchbaseArgs.getPassword());
 
-      // Initialize fields.
-      CouchbaseViewInputSplit couchbaseViewInputSplit = (CouchbaseViewInputSplit) inputSplit;
-      key = new Text();
+        // Initialize fields.
+        CouchbaseViewInputSplit couchbaseViewInputSplit = (CouchbaseViewInputSplit) inputSplit;
+        key = new Text();
 
-      // Prepare for querying the Couchbase view.
-      View view = couchbaseClient.getView(importViewArgs.getDesignDocumentName(), importViewArgs.getViewName());
-      Query query = new Query();
-      query.setKey(couchbaseViewInputSplit.getViewKey());
-      query.setIncludeDocs(true);
-      pages = couchbaseClient.paginatedQuery(view, query, importViewArgs.getDocumentsPerPage());
-      if (pages.hasNext()) {
-        ViewResponse viewResponse = pages.next();
-        rowIterator = viewResponse.iterator();
+        // Prepare for querying the Couchbase view.
+        View view = couchbaseClient.getView(importViewArgs.getDesignDocumentName(), importViewArgs.getViewName());
+        Query query = new Query();
+        query.setKey(couchbaseViewInputSplit.getViewKey());
+        query.setIncludeDocs(true);
+        pages = couchbaseClient.paginatedQuery(view, query, importViewArgs.getDocumentsPerPage());
+
+        try {
+          if (pages.hasNext()) {
+            ViewResponse viewResponse = pages.next();
+            rowIterator = viewResponse.iterator();
+          }
+        } catch (CancellationException e) {
+          try {
+            couchbaseClient.shutdown();
+          } catch (CancellationException e2) {}
+          continue;
+        }
+
+        // Connection was successfully established because no exception was thrown.
+        break;
       }
     }
 
@@ -157,6 +173,10 @@ public class CouchbaseViewInputFormat extends InputFormat<Text, ViewRow> {
     }
 
     private boolean nextRow() {
+      if (rowIterator == null) {
+        return false;
+      }
+
       if (rowIterator.hasNext()) {
         value = rowIterator.next();
         key.set(value.getId());

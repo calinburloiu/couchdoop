@@ -78,8 +78,8 @@ public class CouchbaseOutputFormat extends OutputFormat<String, CouchbaseAction>
           return;
         }
 
-        // FIXME EXISTS does not work.
-        // If the operation is exists, count non existent touched keys.
+        // FIXME EXISTS is not efficient.
+        // If the operation exists, count non existent touched keys.
         boolean res;
         try {
           res = future.get();
