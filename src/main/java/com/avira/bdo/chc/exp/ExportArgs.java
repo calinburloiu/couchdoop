@@ -33,7 +33,7 @@ public class ExportArgs extends CouchbaseArgs {
     addOption(options, ARG_INPUT, true, true,
         "(required) HDFS input directory");
     addOption(options, ARG_OPERATION, true, false,
-      "one of Couchbase store operations: SET, ADD, REPLACE, APPEND, PREPEND, DELETE; defaults to SET");
+      "one of Couchbase store operations: SET, ADD, REPLACE, APPEND, PREPEND, DELETE, EXISTS; defaults to SET");
 
     return options;
   }
