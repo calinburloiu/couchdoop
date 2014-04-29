@@ -108,8 +108,8 @@ public class CouchbaseViewInputFormat extends InputFormat<Text, ViewRow> {
         throw new IllegalArgumentException("Not all Couchbase arguments are present: " + couchbaseArgs);
       }
 
-      // Connect to Couchbase. Retry a few time on cancellation.
-      for (int i = 0; i < CONNECT_RETRIES; i++) {
+      // Connect to Couchbase. Retry a few times on cancellation.
+      for (int retryNo = 1; retryNo <= CONNECT_RETRIES; retryNo++) {
         couchbaseClient =
           connectToCouchbase(couchbaseArgs.getUrls(), couchbaseArgs.getBucket(), couchbaseArgs.getPassword());
 
@@ -130,9 +130,11 @@ public class CouchbaseViewInputFormat extends InputFormat<Text, ViewRow> {
             rowIterator = viewResponse.iterator();
           }
         } catch (CancellationException e) {
-          try {
+          LOGGER.error("Attempt no. %d to connect to Couchbase failed due to: %s", retryNo,
+              ExceptionUtils.getStackTrace(e));
+//          try {
             couchbaseClient.shutdown();
-          } catch (CancellationException e2) {}
+//          } catch (CancellationException e2) {}
           continue;
         }
 
