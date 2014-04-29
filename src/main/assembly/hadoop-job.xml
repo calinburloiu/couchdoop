@@ -10,13 +10,13 @@
       <scope>runtime</scope>
       <outputDirectory>lib</outputDirectory>
       <excludes>
-        <exclude>com.avira.bdo:couchbase-hadoop-connector</exclude>
+        <exclude>com.avira.bdo:couchdoop</exclude>
       </excludes>
     </dependencySet>
     <dependencySet>
       <unpack>true</unpack>
       <includes>
-        <include>com.avira.bdo:couchbase-hadoop-connector</include>
+        <include>com.avira.bdo:couchdoop</include>
       </includes>
     </dependencySet>
   </dependencySets>
