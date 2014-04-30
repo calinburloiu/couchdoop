@@ -10,13 +10,13 @@
       <scope>runtime</scope>
       <outputDirectory>lib</outputDirectory>
       <excludes>
-        <exclude>com.avira.bdo:couchdoop</exclude>
+        <exclude>com.avira.couchdoop:couchdoop</exclude>
       </excludes>
     </dependencySet>
     <dependencySet>
       <unpack>true</unpack>
       <includes>
-        <include>com.avira.bdo:couchdoop</include>
+        <include>com.avira.couchdoop:couchdoop</include>
       </includes>
     </dependencySet>
   </dependencySets>

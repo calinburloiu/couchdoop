@@ -9,7 +9,7 @@
     </layout>
   </appender>
 
-  <logger name="com.avira.bdo.AppTest">
+  <logger name="com.avira.couchdoop.AppTest">
     <level value="DEBUG" />
     <appender-ref ref="console" />
   </logger>
