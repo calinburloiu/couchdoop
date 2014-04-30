@@ -106,7 +106,7 @@ public class CouchbaseViewInputFormat extends InputFormat<Text, ViewRow> {
 
     private boolean finished = false;
 
-    public static final int CONNECT_RETRIES = 25;
+    public static final int CONNECT_RETRIES = 5;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CouchbaseViewRecordReader.class);
 
@@ -128,7 +128,8 @@ public class CouchbaseViewInputFormat extends InputFormat<Text, ViewRow> {
       }
 
       // Connect to Couchbase. Retry a few times on cancellation.
-      for (int retryNo = 1; retryNo <= CONNECT_RETRIES; retryNo++) {
+      int retryNo;
+      for (retryNo = 1; retryNo <= CONNECT_RETRIES; retryNo++) {
         couchbaseClient =
           connectToCouchbase(couchbaseArgs.getUrls(), couchbaseArgs.getBucket(), couchbaseArgs.getPassword());
 
@@ -137,6 +138,7 @@ public class CouchbaseViewInputFormat extends InputFormat<Text, ViewRow> {
         key = new Text();
 
         // Prepare for querying the Couchbase view.
+        LOGGER.info("Querying Couchbase for view {}...");
         View view = couchbaseClient.getView(importViewArgs.getDesignDocumentName(), importViewArgs.getViewName());
         Query query = new Query();
         query.setKey(couchbaseViewInputSplit.getViewKey());
@@ -149,16 +151,19 @@ public class CouchbaseViewInputFormat extends InputFormat<Text, ViewRow> {
             rowIterator = viewResponse.iterator();
           }
         } catch (CancellationException e) {
-          LOGGER.error("Attempt no. %d to connect to Couchbase failed due to: %s", retryNo,
-              ExceptionUtils.getStackTrace(e));
-//          try {
-            couchbaseClient.shutdown();
-//          } catch (CancellationException e2) {}
+          LOGGER.error("Attempt no. {} to connect to Couchbase for querying view {} failed due to: {}",
+              retryNo, couchbaseViewInputSplit.getViewKey(), ExceptionUtils.getFullStackTrace(e));
+          couchbaseClient.shutdown();
           continue;
         }
 
         // Connection was successfully established because no exception was thrown.
         break;
+      }
+
+      if (retryNo >= CONNECT_RETRIES) {
+        throw new RuntimeException("Failed to connect to Couchbase after " + CONNECT_RETRIES +
+            " retries.");
       }
     }
 
