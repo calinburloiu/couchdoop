@@ -62,14 +62,15 @@ public class CouchbaseOutputFormat extends OutputFormat<String, CouchbaseAction>
       expBackoffCounters = new int[EXP_BACKOFF_MAX_TRIES];
     }
 
-    protected OperationFuture<Boolean> store(CouchbaseOperation operation, String key, Object value) {
+    protected OperationFuture<Boolean> store(CouchbaseOperation operation,
+                                             String key, Object value, int expiry) {
       switch (operation) {
         case SET:
-          return couchbaseClient.set(key, value);
+          return couchbaseClient.set(key, expiry, value);
         case ADD:
-          return couchbaseClient.add(key, value);
+          return couchbaseClient.add(key, expiry, value);
         case REPLACE:
-          return couchbaseClient.replace(key, value);
+          return couchbaseClient.replace(key, expiry, value);
         case APPEND:
           return couchbaseClient.append(key, value);
         case PREPEND:
@@ -77,7 +78,7 @@ public class CouchbaseOutputFormat extends OutputFormat<String, CouchbaseAction>
         case DELETE:
           return couchbaseClient.delete(key);
         case EXISTS:
-          return couchbaseClient.touch(key, 0);
+          return couchbaseClient.touch(key, expiry);
         default:
           // Ignore this action.
           return null;
@@ -92,7 +93,7 @@ public class CouchbaseOutputFormat extends OutputFormat<String, CouchbaseAction>
 
       // Store in Couchbase by doing exponential back-off.
       do {
-        future = store(value.getOperation(), key, value.getValue());
+        future = store(value.getOperation(), key, value.getValue(), value.getExpiry());
         if (future == null) {
           return;
         }
