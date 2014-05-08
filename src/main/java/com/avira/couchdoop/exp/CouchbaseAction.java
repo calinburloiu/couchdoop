@@ -29,9 +29,17 @@ public class CouchbaseAction {
   private CouchbaseOperation operation;
   private Object value;
 
+  private int expiry = 0;
+
   public CouchbaseAction(CouchbaseOperation operation, Object value) {
     this.operation = operation;
     this.value = value;
+  }
+
+  public CouchbaseAction(CouchbaseOperation operation, Object value, int expiry) {
+    this.operation = operation;
+    this.value = value;
+    this.expiry = expiry;
   }
 
   public static CouchbaseAction createSetAction(Object value) {
@@ -80,6 +88,14 @@ public class CouchbaseAction {
 
   public void setValue(Object value) {
     this.value = value;
+  }
+
+  public int getExpiry() {
+    return expiry;
+  }
+
+  public void setExpiry(int expiry) {
+    this.expiry = expiry;
   }
 
   @Override
