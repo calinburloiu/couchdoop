@@ -33,6 +33,8 @@ public class CouchbaseViewToFileMapper extends Mapper<Text, ViewRow, Text, Text>
 
   @Override
   protected void map(Text key, ViewRow value, Context context) throws IOException, InterruptedException {
-    context.write(key, new Text(value.getDocument().toString()));
+    if (value != null) {
+      context.write(key, new Text(value.getDocument().toString()));
+    }
   }
 }
