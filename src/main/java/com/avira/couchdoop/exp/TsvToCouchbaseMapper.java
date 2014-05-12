@@ -33,6 +33,7 @@ import java.io.IOException;
 public class TsvToCouchbaseMapper extends Mapper<LongWritable, Text, String, CouchbaseAction> {
 
   private CouchbaseOperation operation;
+  private int expiry;
 
   private static final String COUNTER_ERRORS = "ERRORS";
 
@@ -42,6 +43,7 @@ public class TsvToCouchbaseMapper extends Mapper<LongWritable, Text, String, Cou
   protected void setup(Context context) throws IOException, InterruptedException {
     try {
       operation = ExportArgs.getOperation(context.getConfiguration());
+      expiry = ExportArgs.getExpiry(context.getConfiguration());
     } catch (ArgsException e) {
       throw new IllegalArgumentException(e);
     }
@@ -69,7 +71,7 @@ public class TsvToCouchbaseMapper extends Mapper<LongWritable, Text, String, Cou
       }
 
       docId = pair[0];
-      action = new CouchbaseAction(operation, pair[1]);
+      action = new CouchbaseAction(operation, pair[1], expiry);
     }
 
     context.write(docId, action);
