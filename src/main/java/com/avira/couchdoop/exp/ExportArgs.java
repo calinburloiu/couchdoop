@@ -33,9 +33,11 @@ public class ExportArgs extends CouchbaseArgs {
   private String input;
 
   private CouchbaseOperation operation;
+  private int expiry;
 
   public static final ArgDef ARG_INPUT = new ArgDef('i', "input");
   public static final ArgDef ARG_OPERATION = new ArgDef('t', "couchbase.operation");
+  public static final ArgDef ARG_EXPIRY = new ArgDef('t', "couchbase.expiry");
 
   public ExportArgs(Configuration hadoopConfiguration) throws ArgsException {
     super(hadoopConfiguration);
@@ -53,6 +55,8 @@ public class ExportArgs extends CouchbaseArgs {
         "(required) HDFS input directory");
     addOption(options, ARG_OPERATION, true, false,
       "one of Couchbase store operations: SET, ADD, REPLACE, APPEND, PREPEND, DELETE, EXISTS; defaults to SET");
+    addOption(options, ARG_EXPIRY, true, false,
+      "Couchbase document expiry value; defaults to 0 (doesn't expire)");
 
     return options;
   }
@@ -63,6 +67,7 @@ public class ExportArgs extends CouchbaseArgs {
 
     input = hadoopConfiguration.get(ARG_INPUT.getPropertyName());
     operation = getOperation(hadoopConfiguration);
+    expiry = getExpiry(hadoopConfiguration);
   }
 
   @Override
@@ -71,6 +76,7 @@ public class ExportArgs extends CouchbaseArgs {
 
     setPropertyFromCliArg(cl, ARG_INPUT);
     setPropertyFromCliArg(cl, ARG_OPERATION);
+    setPropertyFromCliArg(cl, ARG_EXPIRY);
   }
 
   /**
@@ -97,6 +103,22 @@ public class ExportArgs extends CouchbaseArgs {
     } catch (IllegalArgumentException e) {
       throw new ArgsException("Unrecognized store type '" + strCouchbaseOperation +
         "'. Please provide one of the following: SET, ADD, REPLACE, APPEND, PREPEND and DELETE.", e);
+    }
+  }
+
+  public static int getExpiry(Configuration hadoopConfiguration) throws ArgsException {
+    String strExpiry = hadoopConfiguration.get(ARG_EXPIRY.getPropertyName());
+
+    // Default value
+    if (strExpiry == null) {
+      return 0;
+    }
+
+    try {
+      return Integer.parseInt(strExpiry);
+    } catch (NumberFormatException e) {
+      throw new ArgsException("Unrecognized expiry value '" + strExpiry +
+        "'. Please provide a positive integer.", e);
     }
   }
 
