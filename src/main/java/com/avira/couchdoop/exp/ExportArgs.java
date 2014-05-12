@@ -37,7 +37,7 @@ public class ExportArgs extends CouchbaseArgs {
 
   public static final ArgDef ARG_INPUT = new ArgDef('i', "input");
   public static final ArgDef ARG_OPERATION = new ArgDef('t', "couchbase.operation");
-  public static final ArgDef ARG_EXPIRY = new ArgDef('t', "couchbase.expiry");
+  public static final ArgDef ARG_EXPIRY = new ArgDef('x', "couchbase.expiry");
 
   public ExportArgs(Configuration hadoopConfiguration) throws ArgsException {
     super(hadoopConfiguration);
