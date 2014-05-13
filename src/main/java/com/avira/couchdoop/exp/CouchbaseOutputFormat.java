@@ -21,7 +21,6 @@ package com.avira.couchdoop.exp;
 
 import com.avira.couchdoop.ArgsException;
 import com.couchbase.client.CouchbaseClient;
-import net.spy.memcached.internal.OperationCompletionListener;
 import net.spy.memcached.internal.OperationFuture;
 import net.spy.memcached.ops.OperationStatus;
 import org.apache.hadoop.mapreduce.*;
@@ -49,6 +48,8 @@ public class CouchbaseOutputFormat extends OutputFormat<String, CouchbaseAction>
     private CouchbaseClient couchbaseClient;
 
     private long nonExistentTouchedKeys = 0;
+    private long failedStoreOperations = 0;
+    private long existentKeys = 0;
     private int[] expBackoffCounters;
 
     protected final static int EXP_BACKOFF_MAX_TRIES = 16;
@@ -98,7 +99,6 @@ public class CouchbaseOutputFormat extends OutputFormat<String, CouchbaseAction>
           return;
         }
 
-        // FIXME EXISTS is not efficient.
         // If the operation exists, count non existent touched keys.
         boolean res;
         try {
@@ -108,6 +108,14 @@ public class CouchbaseOutputFormat extends OutputFormat<String, CouchbaseAction>
         }
         if (!res && value.getOperation().equals(CouchbaseOperation.EXISTS)) {
           nonExistentTouchedKeys++;
+        }
+
+        // TODO See if false also means error.
+        if (!res) {
+          failedStoreOperations++;
+          if (future.getStatus().getMessage().contains("exists")) {
+            existentKeys++;
+          }
         }
 
         if (future.getStatus().isSuccess() || !future.getStatus().getMessage().equals("Temporary failure") ||
@@ -127,6 +135,13 @@ public class CouchbaseOutputFormat extends OutputFormat<String, CouchbaseAction>
     public void close(TaskAttemptContext context) throws IOException, InterruptedException {
       LOGGER.info("Disconnecting from Couchbase...");
       couchbaseClient.shutdown();
+
+      if (failedStoreOperations > 0) {
+        context.getCounter(CouchbaseOutputFormat.class.getName(), "FAILED_STORE_OPERATIONS").increment(failedStoreOperations);
+      }
+      if (existentKeys > 0) {
+        context.getCounter(CouchbaseOutputFormat.class.getName(), "EXISTANT_KEYS").increment(existentKeys);
+      }
 
       // Set counter for non existent touched keys if applicable.
       if (nonExistentTouchedKeys > 0) {
