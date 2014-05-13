@@ -60,11 +60,19 @@ public class ImportExportTool {
         printUsage();
       }
     } catch (ArgsException e) {
-      printUsage();
+      printUsage(e.getMessage());
     }
   }
 
   public static void printUsage() {
+    printUsage(null);
+  }
+
+  public static void printUsage(String msg) {
+    if (msg != null) {
+      System.err.println(msg);
+    }
+
     System.err.println("Usage:\n" +
       APP_NAME + " import [OPTIONS]\n" +
       APP_NAME + " serial-import [OPTIONS]\n" +
