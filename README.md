@@ -13,9 +13,10 @@ useful operations like deleting, counting or changing the expiry of some
 documents.
 
 Couchdoop can be used to update some existing Couchbase documents by using data
-from other Hadoop sources. Imagine a recommendation system which stores item 
-scores in Couchbase documents. After rerunning a machine learning algorithm over 
-user events data from Hadoop the scores from Couchbase can be updated directly.
+from other Hadoop sources. Imagine a recommendation system which stores item
+scores in Couchbase documents. After rerunning a machine learning algorithm
+over user events data from Hadoop the scores from Couchbase can be updated
+directly.
 
 Couchdoop aims to be a better alternative for the official Couchbase Sqoop
 connector which is only able to import a full bucket or to stream documents for
