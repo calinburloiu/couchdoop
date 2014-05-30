@@ -1,5 +1,5 @@
-Couchbase-Hadoop Connector
-==========================
+Couchdoop
+=========
 
 Couchdoop is a Hadoop connector for Couchbase which is able import, export and
 update data. The connector can be used both as a command line tool, which works
