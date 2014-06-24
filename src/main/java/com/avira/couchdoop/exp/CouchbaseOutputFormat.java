@@ -56,6 +56,7 @@ public class CouchbaseOutputFormat extends OutputFormat<String, CouchbaseAction>
     protected final static int EXP_BACKOFF_MAX_RETRY_INTERVAL = 1000; // ms
 
     public CouchbaseRecordWriter(List<URI> urls, String bucket, String password) throws IOException {
+
       LOGGER.info("Connecting to Couchbase...");
       couchbaseClient = new CouchbaseClient(urls, bucket, password);
       LOGGER.info("Connected to Couchbase.");
