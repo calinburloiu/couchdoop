@@ -26,3 +26,15 @@ a configurable amount of time.
 The Command Line Tool
 ---------------------
 
+TODO
+
+Running on CDH5
+---------------
+
+At Avira we experienced a dependency issue when running Couchdoop on CDH5 (in
+particular CDH 5.0.2). CDH5's Hadoop classpath includes dependency
+org.apache.httpcomponents:httpcore version 4.2.5, while the Couchbase Java
+Client includes a newer version of this library, 4.3. In order to make it work
+we needed to prioritize 4.3 by either setting
+`mapreduce.task.classpath.user.precedence` job property to `true` or by calling
+`setUserClassesTakesPrecedence(true)` on a the `Job` object.
