@@ -23,7 +23,6 @@ import com.avira.couchdoop.ArgsException;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
-import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.util.Tool;
@@ -88,7 +87,7 @@ public class CouchbaseExporter extends Configured implements Tool {
     FileInputFormat.setInputPaths(job, input);
 
     // Mapper
-    job.setMapperClass(TsvToCouchbaseMapper.class);
+    job.setMapperClass(CsvToCouchbaseMapper.class);
     job.setMapOutputKeyClass(String.class);
     job.setMapOutputValueClass(CouchbaseAction.class);
 

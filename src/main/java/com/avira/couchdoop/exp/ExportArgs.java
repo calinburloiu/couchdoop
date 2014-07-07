@@ -35,9 +35,12 @@ public class ExportArgs extends CouchbaseArgs {
   private CouchbaseOperation operation;
   private int expiry;
 
+  private String fieldsDelimiter;
+
   public static final ArgDef ARG_INPUT = new ArgDef('i', "input");
   public static final ArgDef ARG_OPERATION = new ArgDef('t', "couchbase.operation");
   public static final ArgDef ARG_EXPIRY = new ArgDef('x', "couchbase.expiry");
+  public static final ArgDef ARG_DELIMITER_FIELDS = new ArgDef('d', "delimiter.fields");
 
   public ExportArgs(Configuration hadoopConfiguration) throws ArgsException {
     super(hadoopConfiguration);
@@ -57,6 +60,8 @@ public class ExportArgs extends CouchbaseArgs {
       "one of Couchbase store operations: SET, ADD, REPLACE, APPEND, PREPEND, DELETE, EXISTS; defaults to SET");
     addOption(options, ARG_EXPIRY, true, false,
       "Couchbase document expiry value; defaults to 0 (doesn't expire)");
+    addOption(options, ARG_DELIMITER_FIELDS, true, false,
+      "Fields delimiter for the CSV input; defaults to tab");
 
     return options;
   }
@@ -68,6 +73,7 @@ public class ExportArgs extends CouchbaseArgs {
     input = hadoopConfiguration.get(ARG_INPUT.getPropertyName());
     operation = getOperation(hadoopConfiguration);
     expiry = getExpiry(hadoopConfiguration);
+    fieldsDelimiter = hadoopConfiguration.get(ARG_DELIMITER_FIELDS.getPropertyName(), "\t");
   }
 
   @Override
@@ -77,6 +83,7 @@ public class ExportArgs extends CouchbaseArgs {
     setPropertyFromCliArg(cl, ARG_INPUT);
     setPropertyFromCliArg(cl, ARG_OPERATION);
     setPropertyFromCliArg(cl, ARG_EXPIRY);
+    setPropertyFromCliArg(cl, ARG_DELIMITER_FIELDS);
   }
 
   /**
@@ -106,6 +113,13 @@ public class ExportArgs extends CouchbaseArgs {
     }
   }
 
+  /**
+   * @return Couchbase store operation to be used
+   */
+  public CouchbaseOperation getOperation() {
+    return operation;
+  }
+
   public static int getExpiry(Configuration hadoopConfiguration) throws ArgsException {
     String strExpiry = hadoopConfiguration.get(ARG_EXPIRY.getPropertyName());
 
@@ -122,10 +136,11 @@ public class ExportArgs extends CouchbaseArgs {
     }
   }
 
-  /**
-   * @return Couchbase store operation to be used
-   */
-  public CouchbaseOperation getOperation() {
-    return operation;
+  public int getExpiry() {
+    return expiry;
+  }
+
+  public String getFieldsDelimiter() {
+    return fieldsDelimiter;
   }
 }

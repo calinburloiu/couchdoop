@@ -30,10 +30,11 @@ import java.io.IOException;
  * This mapper maps key-value pairs read from TSV files as documents in Couchbase by using keys as IDs and values as
  * documents.
  */
-public class TsvToCouchbaseMapper extends Mapper<LongWritable, Text, String, CouchbaseAction> {
+public class CsvToCouchbaseMapper extends Mapper<LongWritable, Text, String, CouchbaseAction> {
 
   private CouchbaseOperation operation;
   private int expiry;
+  private String fieldsDelimiter;
 
   private static final String COUNTER_ERRORS = "ERRORS";
 
@@ -42,8 +43,11 @@ public class TsvToCouchbaseMapper extends Mapper<LongWritable, Text, String, Cou
   @Override
   protected void setup(Context context) throws IOException, InterruptedException {
     try {
-      operation = ExportArgs.getOperation(context.getConfiguration());
-      expiry = ExportArgs.getExpiry(context.getConfiguration());
+      ExportArgs exportArgs = new ExportArgs(context.getConfiguration());
+
+      operation = exportArgs.getOperation();
+      expiry = exportArgs.getExpiry();
+      fieldsDelimiter = exportArgs.getFieldsDelimiter();
     } catch (ArgsException e) {
       throw new IllegalArgumentException(e);
     }
@@ -53,7 +57,7 @@ public class TsvToCouchbaseMapper extends Mapper<LongWritable, Text, String, Cou
   protected void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
     String docId;
     CouchbaseAction action;
-    String[] pair = value.toString().split("\t");
+    String[] pair = value.toString().split(fieldsDelimiter);
 
     if (operation.equals(CouchbaseOperation.DELETE)) {
       if (pair.length <= 1) {
