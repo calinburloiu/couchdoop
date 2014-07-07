@@ -78,7 +78,7 @@ hadoop jar target/couchdoop-${VERSION}-job.jar import \
     --output /user/johnny/output
 ```
 
-The argument `--couchbase-view-keys` you must provide a ';' separated list of keys used to query the view. Couchbase accepts array keys for views. In the above example two keys are passed. Each Hadoop _map_ task will take a key to query the view. The many the keys you provide here the more you increase the parallelism.
+For argument `--couchbase-view-keys` you must provide a ';' separated list of keys used to query the view. Couchbase accepts array keys for views. In the above example two keys are passed. Each Hadoop _map_ task will take a key to query the view. The many the keys you provide here the more you increase the parallelism.
 
 Let's assume that we want to import user click events from Couchbase. For each event we create a document that contains the date in the key. For example, key `click::johnny::1404736126`, contains username "Johnny" and the UNIX time 1404736126 when the click was performed. Behind the key we store the following document which tracks the fact that the user clicked button download on pixel coordinate (23, 46):
 
@@ -120,7 +120,7 @@ function (doc, meta) {
 
 By emitting an array which has the date as the first element this view allows us to import the events by date. The second element of the emitted array is a partition number which allows Couchdoop to split the view query between Hadoop map tasks. If we want to import all click events for April 1, 2014, we use option `--couchbase-view-keys '["20140401",0];["20140401",1]'`. A Hadoop map task will query Couchbase for view key `["20140401",0]` and another one for view key `["20140401",1]`.
 
-The import tool uses `TextOutputFormat` and will emit Couchbase document IDs are Hadoop keys and Couchbase JSON documents as Hadoop values. By default, Hadoop uses tabs as separators between keys and values, but this can be changed by setting `mapred.textoutputformat.separator` property.
+The import tool uses `TextOutputFormat` and will emit Couchbase document IDs as Hadoop keys and Couchbase JSON documents as Hadoop values. By default, Hadoop uses tabs as separators between keys and values, but this can be changed by setting `mapred.textoutputformat.separator` property.
 
 ### Exporting ###
 
@@ -155,18 +155,18 @@ hadoop jar couchdoop-1.3.0-SNAPSHOT-job.jar export \
 
 The documents are set to expire in 1 hour (3600 s). Argument `-t` or `--couchbase-operation` tells the tool what Couchbase store operation to use. This example uses ADD which creates a document if it doesn't exist and lets it unchanged if it already exists.
 
-The CSV input document must contain two columns, the first one being the document key and the second one the document value. By default, Couchdoop uses tabs as CSV column separators. (To be more rigorous this is a TSV file.) In the above example will tell the tool to use commas as separators.
+The CSV input document must contain two columns, the first one being the document key and the second one the document value. By default, Couchdoop uses tabs as CSV column separators. (To be more rigorous this is actually a TSV file.) In the above example we will tell the tool to use commas as separators.
 
 If you want to delete documents from Couchbase, you must pass option `-t DELETE` and use a CSV file with just one column, where on each row there must be a document ID.
 
 The library
 -----------
 
-Couchdoop can be used as a library for your MapReduce jobs if you want to Couchbase as an input or output for your data. Additionally, you can extend `CouchbaseUpdateMapper` if you want to perform updates to existing Couchbase documents by using data from Hadoop.
+Couchdoop can be used as a library for your MapReduce jobs if you want to use Couchbase as an input or output for your data. Additionally, you can extend `CouchbaseUpdateMapper` if you want to perform updates to existing Couchbase documents by using data from Hadoop.
 
-All the options available for import and export tools have a corresponding Hadoop Configuration property. Just remove the two dashes from the beginning of the long option names and replace the rest of the dashes with dots. For example, `--couchbase-view-keys` becomes Hadoop property `couchbase.view.keys`.
+All the command line argument options available for import and export tools have a corresponding Hadoop Configuration property. Just remove the two dashes from the beginning of the long option names and replace the rest of the dashes with dots. For example, `--couchbase-view-keys` becomes Hadoop property `couchbase.view.keys`.
 
-In order to make things simpler you can write your own Hadoop application which uses the same options as Couchdoop's import or export tool. Import tool options are parsed by [`ImportViewArgs`](/blob/master/src/main/java/com/avira/couchdoop/imp/ImportViewArgs.java) class and export tool options are parsed by [`ExportArgs`](/blob/master/src/main/java/com/avira/couchdoop/exp/ExportArgs.java). Both of these classes update your Hadoop configuration. If you pass argument `--couchbase-bucket my_bucket` to your application the following code will update Hadoop Configuration `conf` with property `couchbase.bucket=my_bucket`:
+In order to make things simpler you can write your own Hadoop application which uses the same options as Couchdoop's import or export tool. Import tool options are parsed by [`ImportViewArgs`](/src/main/java/com/avira/couchdoop/imp/ImportViewArgs.java) class and export tool options are parsed by [`ExportArgs`](/src/main/java/com/avira/couchdoop/exp/ExportArgs.java). Both of these classes update your Hadoop configuration. If you pass argument `--couchbase-bucket my_bucket` to your application the following code will update Hadoop Configuration `conf` with property `couchbase.bucket=my_bucket`:
 
 ```java
 Configuration conf = getConf();
@@ -177,7 +177,7 @@ The Configuration update works because `ImportViewArgs` constructor has side eff
 
 ### Couchbase as Hadoop InputFormat ###
 
-Couchbase views can be used as Hadoop `InputFormat` by using [`CouchbaseViewInputFormat`](/blob/master/src/main/java/com/avira/couchdoop/imp/CouchbaseViewInputFormat.java). Check [`CouchbaseViewImporter`](/blob/master/src/main/java/com/avira/couchdoop/imp/CouchbaseViewImporter.java) class as an example of how to configure a job with `CouchbaseViewInputFormat`.
+Couchbase views can be used as Hadoop `InputFormat` by using [`CouchbaseViewInputFormat`](/src/main/java/com/avira/couchdoop/imp/CouchbaseViewInputFormat.java). Check [`CouchbaseViewImporter`](/src/main/java/com/avira/couchdoop/imp/CouchbaseViewImporter.java) class as an example of how to configure a job with `CouchbaseViewInputFormat`.
 
 The following Mapper maps Couchbase key-values to Hadoop key-values.
 
@@ -197,16 +197,16 @@ The Mapper input keys are Couchbase document IDs and the input values are Couchb
 
 ### Couchbase as Hadoop OutputFormat ###
 
-You can write documents to Couchbase by using [`CouchbaseOutputFormat`](/blob/master/src/main/java/com/avira/couchdoop/exp/CouchbaseOutputFormat.java). Check [`CouchbaseExporter`](/blob/master/src/main/java/com/avira/couchdoop/exp/CouchbaseExporter.java) class as an example of how to configure a job with `CouchbaseOutputFormat`.
+You can write documents to Couchbase by using [`CouchbaseOutputFormat`](/src/main/java/com/avira/couchdoop/exp/CouchbaseOutputFormat.java). Check [`CouchbaseExporter`](/src/main/java/com/avira/couchdoop/exp/CouchbaseExporter.java) class as an example of how to configure a job with `CouchbaseOutputFormat`.
 
-Then, you can write a Mapper which outputs Couchbase document IDs as keys and instances of `CouchbaseAction` as values. A `CouchbaseAction` instance associates a Couchbase document value with a store operation, so for each value stored you can tell Couchdoop if you want to use `set`, `add`, `replace`, `append`, `prepend` or `delete`. 
+In order to write data to Couchbase you must write a Mapper which outputs Couchbase document IDs as keys and instances of `CouchbaseAction` as values. A `CouchbaseAction` instance associates a Couchbase document value with a store operation, so for each value you want to store you can tell Couchdoop if you want to use `set`, `add`, `replace`, `append`, `prepend` or `delete`. 
 
 ### Updating documents from Couchbase with Hadoop ###
 
-Couchbase existing documents can be update by using other data from Hadoop storage. In order to do this you must configure the job to use `CouchbaseOutputFormat` and extend class [`CouchbaseUpdateMapper`](/blob/master/src/main/java/com/avira/couchdoop/update/CouchbaseUpdateMapper.java) and whatever `InputFormat` you want. `transform` and `merge` abstract methods need to be implemented:
+Couchbase existing documents can be updated by using other data from Hadoop storage. In order to do this you must configure the job to use `CouchbaseOutputFormat` and extend class [`CouchbaseUpdateMapper`](/src/main/java/com/avira/couchdoop/update/CouchbaseUpdateMapper.java). You can use whatever `InputFormat` you want. The following abstract methods need to be implemented:
 
-* `transform` method receives the key and the value from the Hadoop storage and extracts from it a Couchbase key, which will be used to get an existing document from Couchbase, and a generic value, `hadoopData`, which contains will be merged with the existing Couchbase document in order to create a new document.
-* `merge` method computes a new Couchbase document by using a value extracted from Hadoop storage and an existing Couchbase document value.
+* `transform` method receives the key and the value from the Hadoop storage and extracts from it a Couchbase key, which will be used to get an existing document from Couchbase, and a generic value, `hadoopData`, which will be merged with the existing Couchbase document in order to create a new document.
+* `merge` method computes a new Couchbase document by using a value extracted from Hadoop storage and an existing Couchbase document.
 
 Running on CDH5
 ---------------
@@ -217,4 +217,4 @@ org.apache.httpcomponents:httpcore version 4.2.5, while the Couchbase Java
 Client includes a newer version of this library, 4.3. In order to make it work
 we needed to prioritize 4.3 by either setting
 `mapreduce.task.classpath.user.precedence` job property to `true` or by calling
-`setUserClassesTakesPrecedence(true)` on a the `Job` object.
+`setUserClassesTakesPrecedence(true)` on the `Job` object.
