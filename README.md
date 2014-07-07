@@ -68,7 +68,7 @@ Add options as explained in the below table to perform an import:
 
 The following example imports all documents from Couchbase view "clicks" from design document "tracking". See [Couchbase Views](http://docs.couchbase.com/couchbase-sdk-java-1.4/#querying-views) documentation for more details about views. The output is written in HDFS in file "/user/johnny/clicks".
 
-```
+```bash
 hadoop jar target/couchdoop-${VERSION}-job.jar import \
     --couchbase-urls http://couchbase.example.com:8091/pools \
     --couchbase-bucket my_bucket \
@@ -82,7 +82,7 @@ The argument `--couchbase-view-keys` you must provide a ';' separated list of ke
 
 Let's assume that we want to import user click events from Couchbase. For each event we create a document that contains the date in the key. For example, key `click::johnny::1404736126`, contains username "Johnny" and the UNIX time 1404736126 when the click was performed. Behind the key we store the following document which tracks the fact that the user clicked button download on pixel coordinate (23, 46):
 
-```
+```json
 {
   "button": "Download",
   "xCoord": 23,
@@ -92,7 +92,7 @@ Let's assume that we want to import user click events from Couchbase. For each e
 
 We create Couchbase design document "tracking" which contains a view "clicks" with the following `map` function:
 
-```
+```javascript
 function (doc, meta) {
   // Retrieve only JSON documents.
   if (meta.type != "json") {
@@ -126,7 +126,7 @@ The import tool uses `TextOutputFormat` and will emit Couchbase document IDs are
 
 Couchdoop _export_ tool is able to export a key-value CSV file form HDFS into Couchbase. The following command displays the usage for this tool:
 
-```
+```bash
 hadoop jar target/couchdoop-${VERSION}-job.jar export
 ```
 
@@ -144,7 +144,7 @@ Add options as shown in the following table to perform the export.
 
 The following example shows how to export CSV file "documents.csv" from HDFS to Couchbase bucket "my_bucket".
 
-```
+```bash
 hadoop jar couchdoop-1.3.0-SNAPSHOT-job.jar export \
     -h http://avira5:8091/pools \
     -b AV_Lists -p 'secret' \
@@ -168,7 +168,7 @@ All the options available for import and export tools have a corresponding Hadoo
 
 In order to make things simpler you can write your own Hadoop application which uses the same options as Couchdoop's import or export tool. Import tool options are parsed by [`ImportViewArgs`](/blob/master/src/main/java/com/avira/couchdoop/imp/ImportViewArgs.java) class and export tool options are parsed by [`ExportArgs`](/blob/master/src/main/java/com/avira/couchdoop/exp/ExportArgs.java). Both of these classes update your Hadoop configuration. If you pass argument `--couchbase-bucket my_bucket` to your application the following code will update Hadoop Configuration `conf` with property `couchbase.bucket=my_bucket`:
 
-```
+```java
 Configuration conf = getConf();
 ImportViewArgs importViewArgs = new ImportViewArgs(conf, args);
 ```
@@ -181,7 +181,7 @@ Couchbase views can be used as Hadoop `InputFormat` by using [`CouchbaseViewInpu
 
 The following Mapper maps Couchbase key-values to Hadoop key-values.
 
-```
+```java
 public class CouchbaseViewToFileMapper extends Mapper<Text, ViewRow, Text, Text> {
 
   @Override
