@@ -138,7 +138,7 @@
           <descriptor>src/main/assembly/hadoop-job.xml</descriptor>
           <archive>
             <manifest>
-              <mainClass>com.avira.couchdoop.ImportExportTool</mainClass>
+              <mainClass>com.avira.couchdoop.CouchdoopTool</mainClass>
             </manifest>
           </archive>
         </configuration>
