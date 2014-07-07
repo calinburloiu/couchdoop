@@ -68,9 +68,9 @@ public class ImportExportTool {
     printUsage(null);
   }
 
-  public static void printUsage(String message) {
-    if (message != null) {
-      System.err.println(message);
+  public static void printUsage(String msg) {
+    if (msg != null) {
+      System.err.println(msg);
     }
 
     System.err.println("Usage:\n" +

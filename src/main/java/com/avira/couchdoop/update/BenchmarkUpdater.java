@@ -79,6 +79,11 @@ public class BenchmarkUpdater extends Configured implements Tool {
     Job job = new Job(conf);
     job.setJarByClass(BenchmarkUpdater.class);
 
+    // User classpath takes precedence in favor of Hadoop classpath.
+    // This is because the Couchbase client requires a newer version of
+    // org.apache.httpcomponents:httpcore.
+    job.setUserClassesTakesPrecedence(true);
+
     // Input
     FileInputFormat.setInputPaths(job, input);
 
