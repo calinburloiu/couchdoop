@@ -55,16 +55,16 @@ hadoop jar target/couchdoop-${VERSION}-job.jar import
 
 Add options as explained in the below table to perform an import:
 
-| Option                           | Description
-| -------------------------------- | -----------
-| -h,--couchbase-urls              | (required) comma separated URL list of one or more Couchbase nodes from the cluster
-| -b,--couchbase-bucket            | (required) bucket name in the cluster you wish to use
-| -p,--couchbase-password          | (required) password for the bucket
-| -d,--couchbase-designdoc-name    | (required) name of the design document
-| -v,--couchbase-view-name         | (required) name of the view
-| -k,--couchbase-view-keys         | (required) semicolon separated list of view keys (in JSON format) which are going to be distributed to mappers
-| -o,--output                      | (required) HDFS output directory
-| -P,--couchbase-view-docsperpage  | buffer of documents which are going to be retrieved at once at a mapper; defaults to 1024
+| Option                              | Description
+| ----------------------------------- | -----------
+| `-h`,`--couchbase-urls`             | (required) comma separated URL list of one or more Couchbase nodes from the cluster
+| `-b`,`--couchbase-bucket`           | (required) bucket name in the cluster you wish to use
+| `-p`,`--couchbase-password`         | (required) password for the bucket
+| `-d`,`--couchbase-designdoc-name`   | (required) name of the design document
+| `-v`,`--couchbase-view-name`        | (required) name of the view
+| `-k`,`--couchbase-view-keys`        | (required) semicolon separated list of view keys (in JSON format) which are going to be distributed to mappers
+| `-o`,`--output`                     | (required) HDFS output directory
+| `-P`,`--couchbase-view-docsperpage` | buffer of documents which are going to be retrieved at once at a mapper; defaults to 1024
 
 The following example imports all documents from Couchbase view "clicks" from design document "tracking". See [Couchbase Views](http://docs.couchbase.com/couchbase-sdk-java-1.4/#querying-views) documentation for more details about views. The output is written in HDFS in file "/user/johnny/clicks".
 
@@ -80,7 +80,7 @@ hadoop jar target/couchdoop-${VERSION}-job.jar import \
 
 The argument `--couchbase-view-keys` you must provide a ';' separated list of keys used to query the view. Couchbase accepts array keys for views. In the above example two keys are passed. Each Hadoop _map_ task will take a key to query the view. The many the keys you provide here the more you increase the parallelism.
 
-Let's assume that we want to import user click events from Couchbase. For each event we create a document that contains the date in the key. For example, key "click::johnny::1404736126", contains username "Johnny" and the UNIX time 1404736126 when the click was performed. Behind the key we store the following document which tracks the fact that the user clicked button download on pixel coordinate (23, 46):
+Let's assume that we want to import user click events from Couchbase. For each event we create a document that contains the date in the key. For example, key `click::johnny::1404736126`, contains username "Johnny" and the UNIX time 1404736126 when the click was performed. Behind the key we store the following document which tracks the fact that the user clicked button download on pixel coordinate (23, 46):
 
 ```
 {
@@ -132,15 +132,15 @@ hadoop jar target/couchdoop-${VERSION}-job.jar export
 
 Add options as shown in the following table to perform the export.
 
-| Option                   | Description
-| ------------------------ | -----------
-| -h,--couchbase-urls      | (required) comma separated URL list of one or more Couchbase nodes from the cluster
-| -b,--couchbase-bucket    | (required) bucket name in the cluster you wish to use
-| -p,--couchbase-password  | (required) password for the bucket
-| -i,--input               | (required) HDFS input directory
-| -t,--couchbase-operation | one of Couchbase store operations: SET, ADD, REPLACE, APPEND, PREPEND, DELETE, EXISTS; defaults to SET
-| -x,--couchbase-expiry    | Couchbase document expiry value; defaults to 0 (doesn't expire)
-| -d,--delimiter-fields    | Fields delimiter for the CSV input; defaults to tab
+| Option                       | Description
+| ---------------------------- | -----------
+| `-h`,`--couchbase-urls`      | (required) comma separated URL list of one or more Couchbase nodes from the cluster
+| `-b`,`--couchbase-bucket`    | (required) bucket name in the cluster you wish to use
+| `-p`,`--couchbase-password`  | (required) password for the bucket
+| `-i`,`--input`               | (required) HDFS input directory
+| `-t`,`--couchbase-operation` | one of Couchbase store operations: SET, ADD, REPLACE, APPEND, PREPEND, DELETE, EXISTS; defaults to SET
+| `-x`,`--couchbase-expiry`    | Couchbase document expiry value; defaults to 0 (doesn't expire)
+| `-d`,`--delimiter-fields`    | Fields delimiter for the CSV input; defaults to tab
 
 The following example shows how to export CSV file "documents.csv" from HDFS to Couchbase bucket "my_bucket".
 
@@ -156,6 +156,57 @@ hadoop jar couchdoop-1.3.0-SNAPSHOT-job.jar export \
 The documents are set to expire in 1 hour (3600 s). Argument `-t` or `--couchbase-operation` tells the tool what Couchbase store operation to use. This example uses ADD which creates a document if it doesn't exist and lets it unchanged if it already exists.
 
 The CSV input document must contain two columns, the first one being the document key and the second one the document value. By default, Couchdoop uses tabs as CSV column separators. (To be more rigorous this is a TSV file.) In the above example will tell the tool to use commas as separators.
+
+If you want to delete documents from Couchbase, you must pass option `-t DELETE` and use a CSV file with just one column, where on each row there must be a document ID.
+
+The library
+-----------
+
+Couchdoop can be used as a library for your MapReduce jobs if you want to Couchbase as an input or output for your data. Additionally, you can extend `CouchbaseUpdateMapper` if you want to perform updates to existing Couchbase documents by using data from Hadoop.
+
+All the options available for import and export tools have a corresponding Hadoop Configuration property. Just remove the two dashes from the beginning of the long option names and replace the rest of the dashes with dots. For example, `--couchbase-view-keys` becomes Hadoop property `couchbase.view.keys`.
+
+In order to make things simpler you can write your own Hadoop application which uses the same options as Couchdoop's import or export tool. Import tool options are parsed by [`ImportViewArgs`](/blob/master/src/main/java/com/avira/couchdoop/imp/ImportViewArgs.java) class and export tool options are parsed by [`ExportArgs`](/blob/master/src/main/java/com/avira/couchdoop/exp/ExportArgs.java). Both of these classes update your Hadoop configuration. If you pass argument `--couchbase-bucket my_bucket` to your application the following code will update Hadoop Configuration `conf` with property `couchbase.bucket=my_bucket`:
+
+```
+Configuration conf = getConf();
+ImportViewArgs importViewArgs = new ImportViewArgs(conf, args);
+```
+
+The Configuration update works because `ImportViewArgs` constructor has side effects and updates the Configuration object with the parsed arguments. The same idea applies to `ExportArgs`.
+
+### Couchbase as Hadoop InputFormat ###
+
+Couchbase views can be used as Hadoop `InputFormat` by using [`CouchbaseViewInputFormat`](/blob/master/src/main/java/com/avira/couchdoop/imp/CouchbaseViewInputFormat.java). Check [`CouchbaseViewImporter`](/blob/master/src/main/java/com/avira/couchdoop/imp/CouchbaseViewImporter.java) class as an example of how to configure a job with `CouchbaseViewInputFormat`.
+
+The following Mapper maps Couchbase key-values to Hadoop key-values.
+
+```
+public class CouchbaseViewToFileMapper extends Mapper<Text, ViewRow, Text, Text> {
+
+  @Override
+  protected void map(Text key, ViewRow value, Context context) throws IOException, InterruptedException {
+    if (value != null) {
+      context.write(key, new Text(value.getDocument().toString()));
+    }
+  }
+}
+```
+
+The Mapper input keys are Couchbase document IDs and the input values are Couchbase view query results, `ViewRow` objects.
+
+### Couchbase as Hadoop OutputFormat ###
+
+You can write documents to Couchbase by using [`CouchbaseOutputFormat`](/blob/master/src/main/java/com/avira/couchdoop/exp/CouchbaseOutputFormat.java). Check [`CouchbaseExporter`](/blob/master/src/main/java/com/avira/couchdoop/exp/CouchbaseExporter.java) class as an example of how to configure a job with `CouchbaseOutputFormat`.
+
+Then, you can write a Mapper which outputs Couchbase document IDs as keys and instances of `CouchbaseAction` as values. A `CouchbaseAction` instance associates a Couchbase document value with a store operation, so for each value stored you can tell Couchdoop if you want to use `set`, `add`, `replace`, `append`, `prepend` or `delete`. 
+
+### Updating documents from Couchbase with Hadoop ###
+
+Couchbase existing documents can be update by using other data from Hadoop storage. In order to do this you must configure the job to use `CouchbaseOutputFormat` and extend class [`CouchbaseUpdateMapper`](/blob/master/src/main/java/com/avira/couchdoop/update/CouchbaseUpdateMapper.java) and whatever `InputFormat` you want. `transform` and `merge` abstract methods need to be implemented:
+
+* `transform` method receives the key and the value from the Hadoop storage and extracts from it a Couchbase key, which will be used to get an existing document from Couchbase, and a generic value, `hadoopData`, which contains will be merged with the existing Couchbase document in order to create a new document.
+* `merge` method computes a new Couchbase document by using a value extracted from Hadoop storage and an existing Couchbase document value.
 
 Running on CDH5
 ---------------
