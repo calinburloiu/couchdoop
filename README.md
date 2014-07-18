@@ -166,18 +166,21 @@ Couchdoop can be used as a library for your MapReduce jobs if you want to use Co
 
 All the command line argument options available for import and export tools have a corresponding Hadoop Configuration property. Just remove the two dashes from the beginning of the long option names and replace the rest of the dashes with dots. For example, `--couchbase-view-keys` becomes Hadoop property `couchbase.view.keys`.
 
-In order to make things simpler you can write your own Hadoop application which uses the same options as Couchdoop's import or export tool. Import tool options are parsed by [`ImportViewArgs`](/src/main/java/com/avira/couchdoop/imp/ImportViewArgs.java) class and export tool options are parsed by [`ExportArgs`](/src/main/java/com/avira/couchdoop/exp/ExportArgs.java). Both of these classes update your Hadoop configuration. If you pass argument `--couchbase-bucket my_bucket` to your application the following code will update Hadoop Configuration `conf` with property `couchbase.bucket=my_bucket`:
+In order to make things simpler you can write your own Hadoop application which uses the same options as Couchdoop's import or export tool. Import tool options are parsed by [`ImportViewArgs`](/src/main/java/com/avira/couchdoop/imp/ImportViewArgs.java) class and export tool options are parsed by [`ExportArgs`](/src/main/java/com/avira/couchdoop/exp/ExportArgs.java). Both of these classes can update your Hadoop configuration.  The following lines of code will update Hadoop Configuration `conf`, so for example, if you pass argument `--couchbase-bucket my_bucket` it will update the configuration object with property `couchbase.bucket=my_bucket`:
 
 ```java
 Configuration conf = getConf();
-ImportViewArgs importViewArgs = new ImportViewArgs(conf, args);
+ImportViewArgs importViewArgs = new ImportViewArgs(conf);
+importViewArgs.loadCliArgs(args);
 ```
 
-The Configuration update works because `ImportViewArgs` constructor has side effects and updates the Configuration object with the parsed arguments. The same idea applies to `ExportArgs`.
+The same idea applies to `ExportArgs`.
 
 ### Couchbase as Hadoop InputFormat ###
 
 Couchbase views can be used as Hadoop `InputFormat` by using [`CouchbaseViewInputFormat`](/src/main/java/com/avira/couchdoop/imp/CouchbaseViewInputFormat.java). Check [`CouchbaseViewImporter`](/src/main/java/com/avira/couchdoop/imp/CouchbaseViewImporter.java) class as an example of how to configure a job with `CouchbaseViewInputFormat`.
+
+`CouchbaseViewInputFormat` contains the static method helper `initJob` which configures database and view connection and sets the `InputFormat`.
 
 The following Mapper maps Couchbase key-values to Hadoop key-values.
 
@@ -198,6 +201,8 @@ The Mapper input keys are Couchbase document IDs and the input values are Couchb
 ### Couchbase as Hadoop OutputFormat ###
 
 You can write documents to Couchbase by using [`CouchbaseOutputFormat`](/src/main/java/com/avira/couchdoop/exp/CouchbaseOutputFormat.java). Check [`CouchbaseExporter`](/src/main/java/com/avira/couchdoop/exp/CouchbaseExporter.java) class as an example of how to configure a job with `CouchbaseOutputFormat`.
+
+`CouchbaseOutputFormat` contains the static method helper `initJob` which configures database connection, sets the `InputFormat` and set the job output key and output value types required by `CouchbaseOutputFormat`.
 
 In order to write data to Couchbase you must write a Mapper which outputs Couchbase document IDs as keys and instances of `CouchbaseAction` as values. A `CouchbaseAction` instance associates a Couchbase document value with a store operation, so for each value you want to store you can tell Couchdoop if you want to use `set`, `add`, `replace`, `append`, `prepend` or `delete`. 
 
