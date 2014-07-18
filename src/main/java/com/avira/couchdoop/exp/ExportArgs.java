@@ -46,6 +46,7 @@ public class ExportArgs extends CouchbaseArgs {
     super(hadoopConfiguration);
   }
 
+  @Deprecated
   public ExportArgs(Configuration hadoopConfiguration, String[] cliArgs) throws ArgsException {
     super(hadoopConfiguration, cliArgs);
   }
@@ -67,8 +68,8 @@ public class ExportArgs extends CouchbaseArgs {
   }
 
   @Override
-  public void loadFromHadoopConfiguration() throws ArgsException {
-    super.loadFromHadoopConfiguration();
+  public void loadHadoopConfiguration() throws ArgsException {
+    super.loadHadoopConfiguration();
 
     input = hadoopConfiguration.get(ARG_INPUT.getPropertyName());
     operation = getOperation(hadoopConfiguration);

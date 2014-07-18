@@ -54,23 +54,31 @@ public abstract class Args {
   }
 
   public Args() {
+    this.hadoopConfiguration = new Configuration();
   }
 
   public Args(Configuration hadoopConfiguration) throws ArgsException {
     this.hadoopConfiguration = hadoopConfiguration;
 
-    loadFromHadoopConfiguration();
+    loadHadoopConfiguration();
   }
 
   /**
    * Create an instance from the command line arguments. Pass null to hadoopConfiguration is only checking the
    * arguments is required. Otherwise the Configuration is updated with the data parsed from the arguments.
+   *
+   * @deprecated Use one of the other constructors and then call
    * @param hadoopConfiguration Hadoop configuration instance to be used and updated with the arguments data
    * @param cliArgs command line arguments from the main class
    */
+  @Deprecated
   public Args(Configuration hadoopConfiguration, String[] cliArgs) throws ArgsException {
     this.hadoopConfiguration = hadoopConfiguration;
 
+    loadCliArgs(cliArgs);
+  }
+
+  public void loadCliArgs(String[] cliArgs) throws ArgsException {
     CommandLineParser parser = new PosixParser();
     CommandLine cl = null;
     try {
@@ -86,7 +94,7 @@ public abstract class Args {
 
     if (hadoopConfiguration != null && cl != null) {
       loadCliArgsIntoHadoopConfiguration(cl);
-      loadFromHadoopConfiguration();
+      loadHadoopConfiguration();
     }
   }
 
@@ -98,7 +106,7 @@ public abstract class Args {
   /**
    * Populates JavaBean instance fields with data from Hadoop configuration member.
    */
-  protected abstract void loadFromHadoopConfiguration() throws ArgsException;
+  protected abstract void loadHadoopConfiguration() throws ArgsException;
 
   /**
    * Queries a {@link org.apache.commons.cli.CommandLine} instance and populates the Hadoop configuration member.

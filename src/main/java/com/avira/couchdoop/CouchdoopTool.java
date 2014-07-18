@@ -44,20 +44,28 @@ public class CouchdoopTool {
     String[] tailArgs = Arrays.copyOfRange(args, 1, args.length);
     
     try {
-      if (tool.equals("import")) {
-        CouchbaseViewImporter importer = new CouchbaseViewImporter();
-        importer.start(tailArgs);
-      } else if (tool.equals("serial-import")) {
-        CouchbaseViewSerialImporter importer = new CouchbaseViewSerialImporter();
-        importer.start(tailArgs);
-      } else if (tool.equals("export")) {
-        CouchbaseExporter exporter = new CouchbaseExporter();
-        exporter.start(tailArgs);
-      } else if (tool.equals("update")) {
-        BenchmarkUpdater updater = new BenchmarkUpdater();
-        updater.start(tailArgs);
-      } else {
-        printUsage();
+      switch (tool) {
+        case "import": {
+          CouchbaseViewImporter importer = new CouchbaseViewImporter();
+          importer.start(tailArgs);
+          break;
+        }
+        case "serial-import": {
+          CouchbaseViewSerialImporter importer = new CouchbaseViewSerialImporter();
+          importer.start(tailArgs);
+          break;
+        }
+        case "export":
+          CouchbaseExporter exporter = new CouchbaseExporter();
+          exporter.start(tailArgs);
+          break;
+        case "update":
+          BenchmarkUpdater updater = new BenchmarkUpdater();
+          updater.start(tailArgs);
+          break;
+        default:
+          printUsage();
+          break;
       }
     } catch (ArgsException e) {
       printUsage(e.getMessage());

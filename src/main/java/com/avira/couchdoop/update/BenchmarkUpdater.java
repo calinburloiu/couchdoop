@@ -57,7 +57,8 @@ public class BenchmarkUpdater extends Configured implements Tool {
   public int run(String[] args) throws Exception {
     Configuration conf = getConf();
     ExportArgs exportArgs;
-    exportArgs = new ExportArgs(conf, args);
+    exportArgs = new ExportArgs(conf);
+    exportArgs.loadCliArgs(args);
 
     Job job;
     boolean exitStatus = true;
@@ -76,7 +77,7 @@ public class BenchmarkUpdater extends Configured implements Tool {
     conf.setInt("mapred.max.map.failures.percent", 5);
     conf.setInt("mapred.max.tracker.failures", 20);
 
-    Job job = new Job(conf);
+    Job job = Job.getInstance(conf);
     job.setJarByClass(BenchmarkUpdater.class);
 
     // User classpath takes precedence in favor of Hadoop classpath.
