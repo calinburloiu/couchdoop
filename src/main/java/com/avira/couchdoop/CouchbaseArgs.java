@@ -47,6 +47,7 @@ public class CouchbaseArgs extends Args {
     super(hadoopConfiguration);
   }
 
+  @Deprecated
   public CouchbaseArgs(Configuration hadoopConfiguration, String[] cliArgs) throws ArgsException {
     super(hadoopConfiguration, cliArgs);
   }
@@ -66,7 +67,7 @@ public class CouchbaseArgs extends Args {
   }
 
   @Override
-  public void loadFromHadoopConfiguration() throws ArgsException {
+  public void loadHadoopConfiguration() throws ArgsException {
     String rawUrls = hadoopConfiguration.get(ARG_COUCHBASE_URLS.getPropertyName());
     if (rawUrls != null) {
       urls = new ArrayList<URI>();

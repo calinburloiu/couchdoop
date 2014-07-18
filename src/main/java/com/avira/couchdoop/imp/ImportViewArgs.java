@@ -23,7 +23,6 @@ import com.avira.couchdoop.ArgsException;
 import com.avira.couchdoop.CouchbaseArgs;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.util.StringUtils;
 
@@ -54,6 +53,7 @@ public class ImportViewArgs extends CouchbaseArgs {
     super(hadoopConfiguration);
   }
 
+  @Deprecated
   public ImportViewArgs(Configuration hadoopConfiguration, String[] cliArgs) throws ArgsException {
     super(hadoopConfiguration, cliArgs);
   }
@@ -77,8 +77,8 @@ public class ImportViewArgs extends CouchbaseArgs {
   }
 
   @Override
-  public void loadFromHadoopConfiguration() throws ArgsException {
-    super.loadFromHadoopConfiguration();
+  public void loadHadoopConfiguration() throws ArgsException {
+    super.loadHadoopConfiguration();
 
     designDocumentName = hadoopConfiguration.get(ARG_DESIGNDOC_NAME.getPropertyName());
     viewName = hadoopConfiguration.get(ARG_VIEW_NAME.getPropertyName());

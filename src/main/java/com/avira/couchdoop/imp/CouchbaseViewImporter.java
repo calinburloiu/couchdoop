@@ -58,7 +58,8 @@ public class CouchbaseViewImporter extends Configured implements Tool {
   public int run(String[] args) throws ArgsException {
     Configuration conf = getConf();
     ImportViewArgs importViewArgs;
-    importViewArgs = new ImportViewArgs(conf, args);
+    importViewArgs = new ImportViewArgs(conf);
+    importViewArgs.loadCliArgs(args);
 
     Job job;
     boolean exitStatus = true;
@@ -77,7 +78,7 @@ public class CouchbaseViewImporter extends Configured implements Tool {
     conf.setInt("mapred.max.map.failures.percent", 5);
     conf.setInt("mapred.max.tracker.failures", 20);
 
-    Job job = new Job(conf);
+    Job job = Job.getInstance(conf);
     job.setJarByClass(CouchbaseViewImporter.class);
 
     // User classpath takes precedence in favor of Hadoop classpath.
