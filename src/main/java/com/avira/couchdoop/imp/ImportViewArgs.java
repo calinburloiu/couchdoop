@@ -26,6 +26,9 @@ import org.apache.commons.cli.Options;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.util.StringUtils;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * {@link com.avira.couchdoop.CouchbaseArgs} implementation which holds Couchbase view import feature settings.
  */
@@ -46,6 +49,8 @@ public class ImportViewArgs extends CouchbaseArgs {
   public static final ArgDef ARG_VIEW_KEYS = new ArgDef('k', "couchbase.view.keys");
   public static final ArgDef ARG_OUTPUT = new ArgDef('o', "output");
   public static final ArgDef ARG_DOCS_PER_PAGE = new ArgDef('P', "couchbase.view.docsPerPage");
+
+  private static final char KEYS_STRING_SEPARATOR = ';';
 
   public ImportViewArgs(Configuration hadoopConfiguration) throws ArgsException {
     super(hadoopConfiguration);
@@ -110,7 +115,41 @@ public class ImportViewArgs extends CouchbaseArgs {
   }
 
   public static String[] getViewKeys(Configuration hadoopConfiguration) {
-    return StringUtils.split(hadoopConfiguration.get(ARG_VIEW_KEYS.getPropertyName()), '\\', ';');
+    return getViewKeys(hadoopConfiguration.get(ARG_VIEW_KEYS.getPropertyName()));
+  }
+
+  protected static String[] getViewKeys(String viewKeysParam) {
+    List<String> splits = new ArrayList<>();
+    char[] chars = viewKeysParam.toCharArray();
+
+    boolean betweenSquareBraces = false;
+    boolean betweenQuotes = false;
+    int lastMatch = 0;
+
+    for(int i=0;i<chars.length;i++) {
+      if( (chars[i]==KEYS_STRING_SEPARATOR) && !betweenQuotes && !betweenSquareBraces ) {
+        splits.add(viewKeysParam.substring(lastMatch,i));
+        lastMatch = i+1;
+      }
+
+      if( (chars[i]=='"') && (i==0 || chars[i-1]!='\\') ) {
+        betweenQuotes = !betweenQuotes; //toggle betweenQuotes
+      }
+
+      if( (chars[i]=='[') && (i==0 || chars[i-1]!='\\') ) {
+        betweenSquareBraces = true;
+      }
+
+      if( (chars[i]==']') && (i==0 || chars[i-1]!='\\') ) {
+        betweenSquareBraces = false;
+      }
+    }
+
+    if(lastMatch < chars.length){
+      splits.add(viewKeysParam.substring(lastMatch,chars.length));
+    }
+
+    return splits.toArray(new String[splits.size()]);
   }
 
   public String getOutput() {
