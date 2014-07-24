@@ -22,6 +22,7 @@ package com.avira.couchdoop;
 import com.avira.couchdoop.exp.CouchbaseExporter;
 import com.avira.couchdoop.imp.CouchbaseViewImporter;
 import com.avira.couchdoop.imp.CouchbaseViewSerialImporter;
+import com.avira.couchdoop.imp.CouchbaseViewToHBaseImporter;
 import com.avira.couchdoop.update.BenchmarkUpdater;
 
 import java.util.Arrays;
@@ -47,6 +48,11 @@ public class CouchdoopTool {
       switch (tool) {
         case "import": {
           CouchbaseViewImporter importer = new CouchbaseViewImporter();
+          importer.start(tailArgs);
+          break;
+        }
+        case "import-to-hbase": {
+          CouchbaseViewToHBaseImporter importer = new CouchbaseViewToHBaseImporter();
           importer.start(tailArgs);
           break;
         }
@@ -83,6 +89,7 @@ public class CouchdoopTool {
 
     System.err.println("Usage:\n" +
       APP_NAME + " import [OPTIONS]\n" +
+      APP_NAME + " import-to-hbase [OPTIONS]\n" +
       APP_NAME + " serial-import [OPTIONS]\n" +
       APP_NAME + " export [OPTIONS]\n");
   }

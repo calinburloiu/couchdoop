@@ -40,8 +40,6 @@ public class ImportViewArgs extends CouchbaseArgs {
   private String output;
 
   private int documentsPerPage;
-  private String docDelimiter;
-  private String rowDelimiter;
 
   public static final ArgDef ARG_DESIGNDOC_NAME = new ArgDef('d', "couchbase.designDoc.name");
   public static final ArgDef ARG_VIEW_NAME = new ArgDef('v', "couchbase.view.name");
@@ -121,13 +119,5 @@ public class ImportViewArgs extends CouchbaseArgs {
 
   public int getDocumentsPerPage() {
     return documentsPerPage;
-  }
-
-  public String getDocDelimiter() {
-    return docDelimiter;
-  }
-
-  public String getRowDelimiter() {
-    return rowDelimiter;
   }
 }
