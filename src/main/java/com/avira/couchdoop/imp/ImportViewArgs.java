@@ -20,6 +20,7 @@
 package com.avira.couchdoop.imp;
 
 import com.avira.couchdoop.ArgsException;
+import com.avira.couchdoop.ArgsHelper;
 import com.avira.couchdoop.CouchbaseArgs;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
@@ -54,54 +55,49 @@ public class ImportViewArgs extends CouchbaseArgs {
 
   private static final char KEYS_STRING_SEPARATOR = ';';
 
-  public ImportViewArgs(Configuration hadoopConfiguration) throws ArgsException {
-    super(hadoopConfiguration);
+  public static final Options OPTIONS = new Options();
+  public static final List<ArgDef> ARGS_LIST = new ArrayList<ArgDef>(5);
+  static {
+    ArgsHelper.addOption(OPTIONS, ARG_DESIGNDOC_NAME, true, true,
+        "(required) name of the design document");
+    ArgsHelper.addOption(OPTIONS, ARG_VIEW_NAME, true, true,
+        "(required) name of the view");
+    ArgsHelper.addOption(OPTIONS, ARG_VIEW_KEYS, true, true,
+        "(required) semicolon separated list of view keys (in JSON format) which are going to be distributed to mappers");
+    ArgsHelper.addOption(OPTIONS, ARG_OUTPUT, true, true,
+        "(required) HDFS output directory");
+    ArgsHelper.addOption(OPTIONS, ARG_DOCS_PER_PAGE, true, false,
+        "buffer of documents which are going to be retrieved at once at a mapper; defaults to 1024");
+
+    ARGS_LIST.add(ARG_DESIGNDOC_NAME);
+    ARGS_LIST.add(ARG_VIEW_NAME);
+    ARGS_LIST.add(ARG_VIEW_KEYS);
+    ARGS_LIST.add(ARG_OUTPUT);
+    ARGS_LIST.add(ARG_DOCS_PER_PAGE);
+
+    ARGS_LIST.addAll(CouchbaseArgs.ARGS_LIST);
   }
 
-  @Deprecated
-  public ImportViewArgs(Configuration hadoopConfiguration, String[] cliArgs) throws ArgsException {
-    super(hadoopConfiguration, cliArgs);
+  @Override
+  public List<ArgDef> getArgsList(){
+    return ImportViewArgs.ARGS_LIST;
   }
 
   @Override
   protected Options getCliOptions() {
-    Options options = super.getCliOptions();
-
-    addOption(options, ARG_DESIGNDOC_NAME, true, true,
-        "(required) name of the design document");
-    addOption(options, ARG_VIEW_NAME, true, true,
-        "(required) name of the view");
-    addOption(options, ARG_VIEW_KEYS, true, true,
-        "(required) semicolon separated list of view keys (in JSON format) which are going to be distributed to mappers");
-    addOption(options, ARG_OUTPUT, true, true,
-        "(required) HDFS output directory");
-    addOption(options, ARG_DOCS_PER_PAGE, true, false,
-        "buffer of documents which are going to be retrieved at once at a mapper; defaults to 1024");
-
-    return options;
+    return ImportViewArgs.OPTIONS;
   }
 
   @Override
-  public void loadHadoopConfiguration() throws ArgsException {
-    super.loadHadoopConfiguration();
+  public void loadFromHadoopConfiguration(Configuration conf) throws ArgsException {
+    super.loadFromHadoopConfiguration(conf);
 
-    designDocumentName = hadoopConfiguration.get(ARG_DESIGNDOC_NAME.getPropertyName());
-    viewName = hadoopConfiguration.get(ARG_VIEW_NAME.getPropertyName());
-    viewKeys = getViewKeys(hadoopConfiguration);
-    output = hadoopConfiguration.get(ARG_OUTPUT.getPropertyName());
+    designDocumentName = conf.get(ARG_DESIGNDOC_NAME.getPropertyName());
+    viewName = conf.get(ARG_VIEW_NAME.getPropertyName());
+    viewKeys = getViewKeys(conf);
+    output = conf.get(ARG_OUTPUT.getPropertyName());
 
-    documentsPerPage = hadoopConfiguration.getInt(ARG_DOCS_PER_PAGE.getPropertyName(), 1024);
-  }
-
-  @Override
-  protected void loadCliArgsIntoHadoopConfiguration(CommandLine cl) throws ArgsException {
-    super.loadCliArgsIntoHadoopConfiguration(cl);
-
-    setPropertyFromCliArg(cl, ARG_DESIGNDOC_NAME);
-    setPropertyFromCliArg(cl, ARG_VIEW_NAME);
-    setPropertyFromCliArg(cl, ARG_VIEW_KEYS);
-    setPropertyFromCliArg(cl, ARG_OUTPUT);
-    setPropertyFromCliArg(cl, ARG_DOCS_PER_PAGE);
+    documentsPerPage = conf.getInt(ARG_DOCS_PER_PAGE.getPropertyName(), 1024);
   }
 
   public String getDesignDocumentName() {

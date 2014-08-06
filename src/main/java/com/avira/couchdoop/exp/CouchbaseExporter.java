@@ -20,6 +20,8 @@
 package com.avira.couchdoop.exp;
 
 import com.avira.couchdoop.ArgsException;
+import com.avira.couchdoop.ArgsHelper;
+import org.apache.commons.cli.CommandLine;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
@@ -55,9 +57,13 @@ public class CouchbaseExporter extends Configured implements Tool {
   @Override
   public int run(String[] args) throws Exception {
     Configuration conf = getConf();
-    ExportArgs exportArgs;
-    exportArgs = new ExportArgs(conf);
-    exportArgs.loadCliArgs(args);
+    ExportArgs exportArgs = new ExportArgs();
+
+    CommandLine cl = exportArgs.parseCommandLineArgs(args);
+    if (conf != null && cl != null) {
+      ArgsHelper.loadClArgsIntoHadoopConf(cl, conf, ExportArgs.ARGS_LIST);
+      exportArgs.loadFromHadoopConfiguration(conf);
+    }
 
     Job job;
     boolean exitStatus = true;

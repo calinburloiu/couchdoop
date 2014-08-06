@@ -20,10 +20,14 @@
 package com.avira.couchdoop.exp;
 
 import com.avira.couchdoop.ArgsException;
+import com.avira.couchdoop.ArgsHelper;
 import com.avira.couchdoop.CouchbaseArgs;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
 import org.apache.hadoop.conf.Configuration;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * {@link com.avira.couchdoop.CouchbaseArgs} implementation which holds Couchbase export feature settings.
@@ -42,49 +46,45 @@ public class ExportArgs extends CouchbaseArgs {
   public static final ArgDef ARG_EXPIRY = new ArgDef('x', "couchbase.expiry");
   public static final ArgDef ARG_DELIMITER_FIELDS = new ArgDef('d', "delimiter.fields");
 
-  public ExportArgs(Configuration hadoopConfiguration) throws ArgsException {
-    super(hadoopConfiguration);
-  }
+  public static final Options OPTIONS = new Options();
+  public static final List<ArgDef> ARGS_LIST = new ArrayList<ArgDef>(4);
+  static {
+    ArgsHelper.addOption(OPTIONS, ARG_INPUT, true, true,
+        "(required) HDFS input directory");
+    ArgsHelper.addOption(OPTIONS, ARG_OPERATION, true, false,
+        "one of Couchbase store operations: SET, ADD, REPLACE, APPEND, PREPEND, DELETE, EXISTS; defaults to SET");
+    ArgsHelper.addOption(OPTIONS, ARG_EXPIRY, true, false,
+        "Couchbase document expiry value; defaults to 0 (doesn't expire)");
+    ArgsHelper.addOption(OPTIONS, ARG_DELIMITER_FIELDS, true, false,
+        "Fields delimiter for the CSV input; defaults to tab");
 
-  @Deprecated
-  public ExportArgs(Configuration hadoopConfiguration, String[] cliArgs) throws ArgsException {
-    super(hadoopConfiguration, cliArgs);
+    ARGS_LIST.add(ARG_INPUT);
+    ARGS_LIST.add(ARG_OPERATION);
+    ARGS_LIST.add(ARG_EXPIRY);
+    ARGS_LIST.add(ARG_DELIMITER_FIELDS);
+
+    ARGS_LIST.addAll(CouchbaseArgs.ARGS_LIST);
   }
 
   @Override
   protected Options getCliOptions() {
-    Options options = super.getCliOptions();
-
-    addOption(options, ARG_INPUT, true, true,
-        "(required) HDFS input directory");
-    addOption(options, ARG_OPERATION, true, false,
-      "one of Couchbase store operations: SET, ADD, REPLACE, APPEND, PREPEND, DELETE, EXISTS; defaults to SET");
-    addOption(options, ARG_EXPIRY, true, false,
-      "Couchbase document expiry value; defaults to 0 (doesn't expire)");
-    addOption(options, ARG_DELIMITER_FIELDS, true, false,
-      "Fields delimiter for the CSV input; defaults to tab");
-
-    return options;
+    return OPTIONS;
   }
 
   @Override
-  public void loadHadoopConfiguration() throws ArgsException {
-    super.loadHadoopConfiguration();
-
-    input = hadoopConfiguration.get(ARG_INPUT.getPropertyName());
-    operation = getOperation(hadoopConfiguration);
-    expiry = getExpiry(hadoopConfiguration);
-    fieldsDelimiter = hadoopConfiguration.get(ARG_DELIMITER_FIELDS.getPropertyName(), "\t");
+  public List<ArgDef> getArgsList(){
+    return ExportArgs.ARGS_LIST;
   }
 
-  @Override
-  protected void loadCliArgsIntoHadoopConfiguration(CommandLine cl) throws ArgsException {
-    super.loadCliArgsIntoHadoopConfiguration(cl);
 
-    setPropertyFromCliArg(cl, ARG_INPUT);
-    setPropertyFromCliArg(cl, ARG_OPERATION);
-    setPropertyFromCliArg(cl, ARG_EXPIRY);
-    setPropertyFromCliArg(cl, ARG_DELIMITER_FIELDS);
+  @Override
+  public void loadFromHadoopConfiguration(Configuration conf) throws ArgsException {
+    super.loadFromHadoopConfiguration(conf);
+
+    input = conf.get(ARG_INPUT.getPropertyName());
+    operation = getOperation(conf);
+    expiry = getExpiry(conf);
+    fieldsDelimiter = conf.get(ARG_DELIMITER_FIELDS.getPropertyName(), "\t");
   }
 
   /**
