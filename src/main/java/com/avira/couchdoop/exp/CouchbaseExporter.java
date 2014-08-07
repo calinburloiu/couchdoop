@@ -61,7 +61,7 @@ public class CouchbaseExporter extends Configured implements Tool {
 
     CommandLine cl = exportArgs.parseCommandLineArgs(args);
     if (conf != null && cl != null) {
-      ArgsHelper.loadClArgsIntoHadoopConf(cl, conf, ExportArgs.ARGS_LIST);
+      ArgsHelper.loadCliArgsIntoHadoopConf(cl, conf, ExportArgs.ARGS_LIST);
       exportArgs.loadFromHadoopConfiguration(conf);
     }
 

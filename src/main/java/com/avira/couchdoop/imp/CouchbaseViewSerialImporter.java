@@ -26,7 +26,6 @@ import com.couchbase.client.protocol.views.*;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,7 +48,7 @@ public class CouchbaseViewSerialImporter {
     iva = new ImportViewArgs(conf);
     CommandLine cl = iva.parseCommandLineArgs(args);
     if (conf != null && cl != null) {
-      ArgsHelper.loadClArgsIntoHadoopConf(cl, conf, ImportViewArgs.ARGS_LIST);
+      ArgsHelper.loadCliArgsIntoHadoopConf(cl, conf, ImportViewArgs.ARGS_LIST);
       iva.loadFromHadoopConfiguration(conf);
     }
 

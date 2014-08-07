@@ -25,10 +25,10 @@ public class ArgsHelper {
     }
   }
 
-  public static void loadClArgsIntoHadoopConf(CommandLine cl, Configuration hadoopConf,
-                                              List<Args.ArgDef> argsList) {
+  public static void loadCliArgsIntoHadoopConf(CommandLine cl, Configuration hadoopConf,
+                                               List<Args.ArgDef> argsList) {
     for (Args.ArgDef arg : argsList) {
-      setPropertyFromCliArg(hadoopConf,cl,arg);
+      setPropertyFromCliArg(hadoopConf, cl, arg);
     }
   }
 

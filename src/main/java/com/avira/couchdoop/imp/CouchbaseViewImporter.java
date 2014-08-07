@@ -64,7 +64,7 @@ public class CouchbaseViewImporter extends Configured implements Tool {
 //importViewArgs.loadCliArgs(args); REPLACED BY NEXT CODE BLOCK:
     CommandLine cl = importViewArgs.parseCommandLineArgs(args);
     if (conf != null && cl != null) {
-      ArgsHelper.loadClArgsIntoHadoopConf(cl, conf, ImportViewArgs.ARGS_LIST);
+      ArgsHelper.loadCliArgsIntoHadoopConf(cl, conf, ImportViewArgs.ARGS_LIST);
       importViewArgs.loadFromHadoopConfiguration(conf);
     }
 
