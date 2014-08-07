@@ -47,28 +47,20 @@ public class ImportViewArgs extends CouchbaseArgs {
   private String docDelimiter;
   private String rowDelimiter;
 
-  public static final ArgDef ARG_DESIGNDOC_NAME = new ArgDef('d', "couchbase.designDoc.name");
-  public static final ArgDef ARG_VIEW_NAME = new ArgDef('v', "couchbase.view.name");
-  public static final ArgDef ARG_VIEW_KEYS = new ArgDef('k', "couchbase.view.keys");
-  public static final ArgDef ARG_OUTPUT = new ArgDef('o', "output");
-  public static final ArgDef ARG_DOCS_PER_PAGE = new ArgDef('P', "couchbase.view.docsPerPage");
-
+  public static final ArgDef ARG_DESIGNDOC_NAME = new ArgDef('d', "couchbase.designDoc.name", true, true,
+      "(required) name of the design document");
+  public static final ArgDef ARG_VIEW_NAME = new ArgDef('v', "couchbase.view.name", true, true,
+      "(required) name of the view");
+  public static final ArgDef ARG_VIEW_KEYS = new ArgDef('k', "couchbase.view.keys", true, true,
+      "(required) semicolon separated list of view keys (in JSON format) which are going to be distributed to mappers");
+  public static final ArgDef ARG_OUTPUT = new ArgDef('o', "output", true, true,
+      "(required) HDFS output directory");
+  public static final ArgDef ARG_DOCS_PER_PAGE = new ArgDef('P', "couchbase.view.docsPerPage", true, false,
+      "buffer of documents which are going to be retrieved at once at a mapper; defaults to 1024");
   private static final char KEYS_STRING_SEPARATOR = ';';
 
-  public static final Options OPTIONS = new Options();
-  public static final List<ArgDef> ARGS_LIST = new ArrayList<ArgDef>(5);
+  public static final List<ArgDef> ARGS_LIST = new ArrayList<>(5);
   static {
-    ArgsHelper.addOption(OPTIONS, ARG_DESIGNDOC_NAME, true, true,
-        "(required) name of the design document");
-    ArgsHelper.addOption(OPTIONS, ARG_VIEW_NAME, true, true,
-        "(required) name of the view");
-    ArgsHelper.addOption(OPTIONS, ARG_VIEW_KEYS, true, true,
-        "(required) semicolon separated list of view keys (in JSON format) which are going to be distributed to mappers");
-    ArgsHelper.addOption(OPTIONS, ARG_OUTPUT, true, true,
-        "(required) HDFS output directory");
-    ArgsHelper.addOption(OPTIONS, ARG_DOCS_PER_PAGE, true, false,
-        "buffer of documents which are going to be retrieved at once at a mapper; defaults to 1024");
-
     ARGS_LIST.add(ARG_DESIGNDOC_NAME);
     ARGS_LIST.add(ARG_VIEW_NAME);
     ARGS_LIST.add(ARG_VIEW_KEYS);
@@ -78,14 +70,17 @@ public class ImportViewArgs extends CouchbaseArgs {
     ARGS_LIST.addAll(CouchbaseArgs.ARGS_LIST);
   }
 
-  @Override
-  public List<ArgDef> getArgsList(){
-    return ImportViewArgs.ARGS_LIST;
+  public ImportViewArgs() {
+    super();
+  }
+
+  public ImportViewArgs(Configuration conf) throws ArgsException {
+    super(conf);
   }
 
   @Override
-  protected Options getCliOptions() {
-    return ImportViewArgs.OPTIONS;
+  public List<ArgDef> getArgsList(){
+    return ImportViewArgs.ARGS_LIST;
   }
 
   @Override

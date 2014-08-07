@@ -39,28 +39,25 @@ public class CouchbaseArgs extends Args {
   private String bucket;
   private String password;
 
-  public static final ArgDef ARG_COUCHBASE_URLS = new ArgDef('h', "couchbase.urls");
-  public static final ArgDef ARG_COUCHBASE_BUCKET = new ArgDef('b', "couchbase.bucket");
-  public static final ArgDef ARG_COUCHBASE_PASSWORD = new ArgDef('p', "couchbase.password");
+  public static final ArgDef ARG_COUCHBASE_URLS = new ArgDef('h', "couchbase.urls", true, true,
+      "(required) comma separated URL list of one or more Couchbase nodes from the cluster");
+  public static final ArgDef ARG_COUCHBASE_BUCKET = new ArgDef('b', "couchbase.bucket", true, true,
+      "(required) bucket name in the cluster you wish to use");
+  public static final ArgDef ARG_COUCHBASE_PASSWORD = new ArgDef('p', "couchbase.password", true, true,
+      "(required) password for the bucket");
 
-  public static final Options OPTIONS = new Options();
   public static final List<ArgDef> ARGS_LIST = new ArrayList<ArgDef>(3);
   static {
-    ArgsHelper.addOption(OPTIONS, ARG_COUCHBASE_URLS, true, true,
-        "(required) comma separated URL list of one or more Couchbase nodes from the cluster");
-    ArgsHelper.addOption(OPTIONS, ARG_COUCHBASE_BUCKET, true, true,
-        "(required) bucket name in the cluster you wish to use");
-    ArgsHelper.addOption(OPTIONS, ARG_COUCHBASE_PASSWORD, true, true,
-        "(required) password for the bucket");
-
     ARGS_LIST.add(ARG_COUCHBASE_URLS);
     ARGS_LIST.add(ARG_COUCHBASE_BUCKET);
     ARGS_LIST.add(ARG_COUCHBASE_PASSWORD);
   }
 
-  @Override
-  protected Options getCliOptions() {
-    return CouchbaseArgs.OPTIONS;
+  public CouchbaseArgs() {
+  }
+
+  public CouchbaseArgs(Configuration conf) throws ArgsException {
+    super(conf);
   }
 
   @Override

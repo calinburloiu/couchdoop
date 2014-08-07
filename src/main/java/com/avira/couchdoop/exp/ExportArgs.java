@@ -41,23 +41,17 @@ public class ExportArgs extends CouchbaseArgs {
 
   private String fieldsDelimiter;
 
-  public static final ArgDef ARG_INPUT = new ArgDef('i', "input");
-  public static final ArgDef ARG_OPERATION = new ArgDef('t', "couchbase.operation");
-  public static final ArgDef ARG_EXPIRY = new ArgDef('x', "couchbase.expiry");
-  public static final ArgDef ARG_DELIMITER_FIELDS = new ArgDef('d', "delimiter.fields");
+  public static final ArgDef ARG_INPUT = new ArgDef('i', "input", true, true,
+      "(required) HDFS input directory");
+  public static final ArgDef ARG_OPERATION = new ArgDef('t', "couchbase.operation", true, false,
+      "one of Couchbase store operations: SET, ADD, REPLACE, APPEND, PREPEND, DELETE, EXISTS; defaults to SET");
+  public static final ArgDef ARG_EXPIRY = new ArgDef('x', "couchbase.expiry", true, false,
+      "Couchbase document expiry value; defaults to 0 (doesn't expire)");
+  public static final ArgDef ARG_DELIMITER_FIELDS = new ArgDef('d', "delimiter.fields", true, false,
+      "Fields delimiter for the CSV input; defaults to tab");
 
-  public static final Options OPTIONS = new Options();
-  public static final List<ArgDef> ARGS_LIST = new ArrayList<ArgDef>(4);
+  public static final List<ArgDef> ARGS_LIST = new ArrayList<>(4);
   static {
-    ArgsHelper.addOption(OPTIONS, ARG_INPUT, true, true,
-        "(required) HDFS input directory");
-    ArgsHelper.addOption(OPTIONS, ARG_OPERATION, true, false,
-        "one of Couchbase store operations: SET, ADD, REPLACE, APPEND, PREPEND, DELETE, EXISTS; defaults to SET");
-    ArgsHelper.addOption(OPTIONS, ARG_EXPIRY, true, false,
-        "Couchbase document expiry value; defaults to 0 (doesn't expire)");
-    ArgsHelper.addOption(OPTIONS, ARG_DELIMITER_FIELDS, true, false,
-        "Fields delimiter for the CSV input; defaults to tab");
-
     ARGS_LIST.add(ARG_INPUT);
     ARGS_LIST.add(ARG_OPERATION);
     ARGS_LIST.add(ARG_EXPIRY);
@@ -66,16 +60,18 @@ public class ExportArgs extends CouchbaseArgs {
     ARGS_LIST.addAll(CouchbaseArgs.ARGS_LIST);
   }
 
-  @Override
-  protected Options getCliOptions() {
-    return OPTIONS;
+  public ExportArgs() {
+    super();
+  }
+
+  public ExportArgs(Configuration conf) throws ArgsException {
+    super(conf);
   }
 
   @Override
   public List<ArgDef> getArgsList(){
     return ExportArgs.ARGS_LIST;
   }
-
 
   @Override
   public void loadFromHadoopConfiguration(Configuration conf) throws ArgsException {

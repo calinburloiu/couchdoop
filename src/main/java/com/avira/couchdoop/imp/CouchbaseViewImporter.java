@@ -59,14 +59,9 @@ public class CouchbaseViewImporter extends Configured implements Tool {
   @Override
   public int run(String[] args) throws ArgsException {
     Configuration conf = getConf();
-    ImportViewArgs importViewArgs = new ImportViewArgs(conf);
 
-//importViewArgs.loadCliArgs(args); REPLACED BY NEXT CODE BLOCK:
-    CommandLine cl = importViewArgs.parseCommandLineArgs(args);
-    if (conf != null && cl != null) {
-      ArgsHelper.loadCliArgsIntoHadoopConf(cl, conf, ImportViewArgs.ARGS_LIST);
-      importViewArgs.loadFromHadoopConfiguration(conf);
-    }
+    ArgsHelper.loadCliArgsIntoHadoopConf(conf,ImportViewArgs.ARGS_LIST,args);
+    ImportViewArgs importViewArgs = new ImportViewArgs(conf);
 
     Job job;
     boolean exitStatus = true;

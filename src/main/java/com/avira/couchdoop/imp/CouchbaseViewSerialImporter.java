@@ -42,15 +42,9 @@ public class CouchbaseViewSerialImporter {
   public void start(String[] args)
       throws ArgsException {
     Configuration conf = new Configuration();
-    ImportViewArgs iva;
 
-    //iva = new ImportViewArgs(conf,args); DEPRECATED CONSTRUCTOR REPLACED BY NEXT CODE BLOCK:
-    iva = new ImportViewArgs(conf);
-    CommandLine cl = iva.parseCommandLineArgs(args);
-    if (conf != null && cl != null) {
-      ArgsHelper.loadCliArgsIntoHadoopConf(cl, conf, ImportViewArgs.ARGS_LIST);
-      iva.loadFromHadoopConfiguration(conf);
-    }
+    ArgsHelper.loadCliArgsIntoHadoopConf(conf,ImportViewArgs.ARGS_LIST,args);
+    ImportViewArgs iva = new ImportViewArgs(conf);
 
     // Connect to couchbase and get the view.
     CouchbaseClient couchbaseClient;

@@ -19,7 +19,6 @@
 
 package com.avira.couchdoop;
 
-import org.apache.commons.cli.*;
 import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,17 +32,21 @@ import java.util.List;
  */
 public abstract class Args {
 
-  //protected Configuration hadoopConfiguration;
-
   private static final Logger LOGGER = LoggerFactory.getLogger(Args.class);
 
   public static class ArgDef {
     char shortName;
     String propertyName;
+    boolean hasArg;
+    boolean isRequired;
+    String description;
 
-    public ArgDef(char shortName, String propertyName) {
+    public ArgDef(char shortName, String propertyName, boolean hasArg, boolean isRequired, String description) {
       this.shortName = shortName;
       this.propertyName = propertyName;
+      this.hasArg = hasArg;
+      this.isRequired = isRequired;
+      this.description = description;
     }
 
     public char getShortName() {
@@ -57,12 +60,26 @@ public abstract class Args {
     public String getPropertyName() {
       return propertyName;
     }
+
+    public boolean hasArg() {
+      return hasArg;
+    }
+
+    public boolean isRequired() {
+      return isRequired;
+    }
+
+    public String getDescription() {
+      return description;
+    }
   }
 
-  /**
-   * This method defines the command line interface options for this Args implementation.
-   */
-  protected abstract Options getCliOptions();
+  protected Args() {
+  }
+
+  public Args(Configuration conf) throws ArgsException {
+    loadFromHadoopConfiguration(conf);
+  }
 
   /**
    * Populates JavaBean instance fields with data from Hadoop configuration member.
@@ -70,22 +87,5 @@ public abstract class Args {
   protected abstract void loadFromHadoopConfiguration(Configuration conf) throws ArgsException;
 
   public abstract List<ArgDef> getArgsList();
-
-  public CommandLine parseCommandLineArgs(String[] cliArgs) throws ArgsException {
-    CommandLineParser parser = new PosixParser();
-    CommandLine cl;
-    try {
-      cl = parser.parse(getCliOptions(), cliArgs);
-    } catch (ParseException e) {
-      LOGGER.error(e.getMessage());
-      HelpFormatter formatter = new HelpFormatter();
-      formatter.setOptionComparator(null);
-      formatter.printHelp("...", getCliOptions());
-
-      throw new ArgsException(e);
-    }
-
-    return cl;
-  }
 
 }

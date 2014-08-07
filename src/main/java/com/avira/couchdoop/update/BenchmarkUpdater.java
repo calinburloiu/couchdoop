@@ -57,14 +57,9 @@ public class BenchmarkUpdater extends Configured implements Tool {
   @Override
   public int run(String[] args) throws Exception {
     Configuration conf = getConf();
-    ExportArgs exportArgs = new ExportArgs();
 
-    //exportArgs.loadCliArgs(args); REPLACED BY NEXT CODE BLOCK:
-    CommandLine cl = exportArgs.parseCommandLineArgs(args);
-    if (conf != null && cl != null) {
-      ArgsHelper.loadCliArgsIntoHadoopConf(cl, conf, ExportArgs.ARGS_LIST);
-      exportArgs.loadFromHadoopConfiguration(conf);
-    }
+    ArgsHelper.loadCliArgsIntoHadoopConf(conf, ExportArgs.ARGS_LIST, args);
+    ExportArgs exportArgs = new ExportArgs(conf);
 
     Job job;
     boolean exitStatus = true;

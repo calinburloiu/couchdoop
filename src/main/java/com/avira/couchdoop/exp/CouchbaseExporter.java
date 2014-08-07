@@ -57,13 +57,9 @@ public class CouchbaseExporter extends Configured implements Tool {
   @Override
   public int run(String[] args) throws Exception {
     Configuration conf = getConf();
-    ExportArgs exportArgs = new ExportArgs();
 
-    CommandLine cl = exportArgs.parseCommandLineArgs(args);
-    if (conf != null && cl != null) {
-      ArgsHelper.loadCliArgsIntoHadoopConf(cl, conf, ExportArgs.ARGS_LIST);
-      exportArgs.loadFromHadoopConfiguration(conf);
-    }
+    ArgsHelper.loadCliArgsIntoHadoopConf(conf, ExportArgs.ARGS_LIST, args);
+    ExportArgs exportArgs = new ExportArgs(conf);
 
     Job job;
     boolean exitStatus = true;
