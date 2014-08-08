@@ -20,13 +20,14 @@
 package com.avira.couchdoop.update;
 
 import com.avira.couchdoop.ArgsException;
+import com.avira.couchdoop.ArgsHelper;
 import com.avira.couchdoop.exp.CouchbaseAction;
 import com.avira.couchdoop.exp.CouchbaseOutputFormat;
 import com.avira.couchdoop.exp.ExportArgs;
+import org.apache.commons.cli.CommandLine;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
-import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.util.Tool;
@@ -56,9 +57,9 @@ public class BenchmarkUpdater extends Configured implements Tool {
   @Override
   public int run(String[] args) throws Exception {
     Configuration conf = getConf();
-    ExportArgs exportArgs;
-    exportArgs = new ExportArgs(conf);
-    exportArgs.loadCliArgs(args);
+
+    ArgsHelper.loadCliArgsIntoHadoopConf(conf, ExportArgs.ARGS_LIST, args);
+    ExportArgs exportArgs = new ExportArgs(conf);
 
     Job job;
     boolean exitStatus = true;
