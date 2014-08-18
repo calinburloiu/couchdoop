@@ -260,7 +260,7 @@ public class CouchbaseViewInputFormat extends InputFormat<Text, ViewRow> {
   @Override
   public List<InputSplit> getSplits(JobContext jobContext) throws IOException, InterruptedException {
     List<InputSplit> inputSplits = new ArrayList<InputSplit>();
-    String[] viewKeys = ImportViewArgs.getViewKeys(jobContext.getConfiguration());
+    String[] viewKeys = ImportViewArgs.parseViewKeys(jobContext.getConfiguration());
 
     for (String viewKey : viewKeys) {
       inputSplits.add(new CouchbaseViewInputSplit(viewKey));
