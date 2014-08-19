@@ -39,5 +39,15 @@ public class ImportViewArgsTest {
     }
 
 
+    @Test
+    public void parseViewKeysTest2() {
+        String keysString = "\"2014-07-07\";\"2014-07-08\"";
+
+        String[] keys = ImportViewArgs.parseViewKeys(keysString);
+        System.out.println(Arrays.toString(keys));
+        assertEquals("Number of keys is not correct!", 2, keys.length);
+    }
+
+
 
 }

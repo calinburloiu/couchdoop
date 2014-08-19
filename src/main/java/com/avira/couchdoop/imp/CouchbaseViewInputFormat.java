@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -25,6 +25,7 @@ import com.couchbase.client.CouchbaseClient;
 import com.couchbase.client.protocol.views.*;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.io.ArrayWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapreduce.*;
@@ -35,24 +36,22 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.CancellationException;
 
 /**
  * This input format reads documents from a Couchbase view queried by a list of view keys.
- * <p>
+ * <p/>
  * Instances emit document IDs as key and the corresponding Couchbase {@link com.couchbase.client.protocol.views.ViewRow}
  * as value.
- * <p>
+ * <p/>
  * The view keys passed as input are distributed evenly across a configurable number of Mapper tasks.
  */
 public class CouchbaseViewInputFormat extends InputFormat<Text, ViewRow> {
 
   public static class CouchbaseViewInputSplit extends InputSplit implements Writable {
 
-    private String viewKey;
+    private List<String> viewKeys = new ArrayList<>();
 
     /**
      * Default constructor (necessary because this is a Writable)
@@ -60,48 +59,66 @@ public class CouchbaseViewInputFormat extends InputFormat<Text, ViewRow> {
     public CouchbaseViewInputSplit() {
     }
 
-    /**
-     * Convenience constructor
-     * @param viewKey Couchbase view key that is queried for documents
-     */
-    public CouchbaseViewInputSplit(String viewKey) {
-      this.viewKey = viewKey;
-    }
-
     @Override
     public long getLength() throws IOException, InterruptedException {
-      // The split size is not calculated for performance reasons.
-      return 1;
+      // The split size is calculated only roughly from the number of keys
+      // out of performance considerations
+      return viewKeys.size();
     }
 
     @Override
     public String[] getLocations() throws IOException, InterruptedException {
       // It is assumed that the Couchbase nodes cannot be local.
-      return new String[] {};
+      return new String[]{};
     }
 
     @Override
     public void write(DataOutput out) throws IOException {
-      out.writeUTF(viewKey);
+      Text[] viewKeysTexts = new Text[viewKeys.size()];
+
+      int i = 0;
+      for (String viewKey : viewKeys) {
+        viewKeysTexts[i++] = new Text(viewKey);
+      }
+
+      ArrayWritable viewKeysWritable = new ArrayWritable(Text.class, viewKeysTexts);
+      viewKeysWritable.write(out);
     }
 
     @Override
     public void readFields(DataInput in) throws IOException {
-      viewKey = in.readUTF();
+      ArrayWritable viewKeysWritable = new ArrayWritable(Text.class);
+      viewKeysWritable.readFields(in);
+
+      Collections.addAll(viewKeys, viewKeysWritable.toStrings());
     }
 
-    public String getViewKey() {
-      return viewKey;
+    public void addKey(String key) {
+      viewKeys.add(key);
+    }
+
+    public List<String> getKeys() {
+      return viewKeys;
     }
   }
 
   public static class CouchbaseViewRecordReader extends RecordReader<Text, ViewRow> {
 
+    private List<URI> couchbaseUrls;
+    private String couchbaseBucket;
+    private String couchbasePassword;
+    private String couchbaseDesignDocName;
+    private String couchbaseViewName;
+    private int couchbaseDocsPerPage;
+
+
     private CouchbaseClient couchbaseClient;
+    private View view;
+    private Queue<String> keyQueue = new LinkedList<>();
     private Paginator pages;
     private Iterator<ViewRow> rowIterator;
 
-    private Text key;
+    private Text key = new Text();
     private ViewRow value;
 
     private boolean finished = false;
@@ -111,39 +128,24 @@ public class CouchbaseViewInputFormat extends InputFormat<Text, ViewRow> {
     private static final Logger LOGGER = LoggerFactory.getLogger(CouchbaseViewRecordReader.class);
 
     public void initialize(InputSplit inputSplit, TaskAttemptContext context) throws IOException, InterruptedException {
-      Configuration conf = context.getConfiguration();
-      CouchbaseArgs couchbaseArgs;
-      ImportViewArgs importViewArgs;
-      try {
-        couchbaseArgs = new CouchbaseArgs(conf);
-        importViewArgs = new ImportViewArgs(conf);
-      } catch (ArgsException e) {
-        throw new IllegalArgumentException(e);
-      }
+      initCouchbaseArgs(context);
 
-      // Check args presence.
-      if (couchbaseArgs.getUrls() == null || couchbaseArgs.getBucket() == null ||
-          couchbaseArgs.getPassword() == null) {
-        throw new IllegalArgumentException("Not all Couchbase arguments are present: " + couchbaseArgs);
+      //Add all keys to a queue
+      CouchbaseViewInputSplit couchbaseViewInputSplit = (CouchbaseViewInputSplit) inputSplit;
+      keyQueue.addAll(couchbaseViewInputSplit.getKeys());
+
+      if (0 == keyQueue.size()) {
+        //No keys
+        return;
       }
 
       // Connect to Couchbase. Retry a few times on cancellation.
       int retryNo;
       for (retryNo = 1; retryNo <= CONNECT_RETRIES; retryNo++) {
-        couchbaseClient =
-          connectToCouchbase(couchbaseArgs.getUrls(), couchbaseArgs.getBucket(), couchbaseArgs.getPassword());
+        view = getCouchbaseView();
 
-        // Initialize fields.
-        CouchbaseViewInputSplit couchbaseViewInputSplit = (CouchbaseViewInputSplit) inputSplit;
-        key = new Text();
-
-        // Prepare for querying the Couchbase view.
-        LOGGER.info("Querying Couchbase for view {}...");
-        View view = couchbaseClient.getView(importViewArgs.getDesignDocumentName(), importViewArgs.getViewName());
-        Query query = new Query();
-        query.setKey(couchbaseViewInputSplit.getViewKey());
-        query.setIncludeDocs(true);
-        pages = couchbaseClient.paginatedQuery(view, query, importViewArgs.getDocumentsPerPage());
+        Query query = getQueryForNextKey();
+        pages = couchbaseClient.paginatedQuery(view, query, couchbaseDocsPerPage);
 
         try {
           if (pages.hasNext()) {
@@ -152,8 +154,8 @@ public class CouchbaseViewInputFormat extends InputFormat<Text, ViewRow> {
           }
         } catch (CancellationException e) {
           LOGGER.error("Attempt no. {} to connect to Couchbase for querying view {} failed due to: {}",
-              retryNo, couchbaseViewInputSplit.getViewKey(), ExceptionUtils.getFullStackTrace(e));
-          couchbaseClient.shutdown();
+            retryNo, couchbaseViewInputSplit.getKeys().get(0), ExceptionUtils.getFullStackTrace(e));
+          disconnectFromCouchbase();
           continue;
         }
 
@@ -161,18 +163,65 @@ public class CouchbaseViewInputFormat extends InputFormat<Text, ViewRow> {
         break;
       }
 
-      if (retryNo >= CONNECT_RETRIES) {
+      if (retryNo == CONNECT_RETRIES) {
         throw new RuntimeException("Failed to connect to Couchbase after " + CONNECT_RETRIES +
-            " retries.");
+          " retries.");
       }
     }
 
-    private CouchbaseClient connectToCouchbase(List<URI> urls, String bucket, String password) throws IOException {
+    private Query getQueryForNextKey() {
+      Query query = new Query();
+      String key = keyQueue.poll();
+      if(key == null){
+        return null;
+      }
+      query.setKey(key);
+      query.setIncludeDocs(true);
+      return query;
+    }
+
+
+    private View getCouchbaseView() throws IOException {
+      if(couchbaseClient == null) {
+        couchbaseClient = connectToCouchbase();
+      }
+
+      // Prepare for querying the Couchbase view.
+      LOGGER.info("Querying Couchbase for view {}...");
+      return couchbaseClient.getView(couchbaseDesignDocName, couchbaseViewName);
+    }
+
+
+    private void initCouchbaseArgs(TaskAttemptContext context) {
+      Configuration conf = context.getConfiguration();
+      ImportViewArgs importViewArgs;
+      try {
+        importViewArgs = new ImportViewArgs(conf);
+      } catch (ArgsException e) {
+        throw new IllegalArgumentException(e);
+      }
+
+      // Check args presence.
+      if (importViewArgs.getUrls() == null || importViewArgs.getBucket() == null ||
+        importViewArgs.getPassword() == null) {
+        throw new IllegalArgumentException("Not all Couchbase arguments are present: " + importViewArgs);
+      }
+
+      couchbaseUrls = importViewArgs.getUrls();
+      couchbaseBucket = importViewArgs.getBucket();
+      couchbasePassword = importViewArgs.getPassword();
+      couchbaseDesignDocName = importViewArgs.getDesignDocumentName();
+      couchbaseViewName = importViewArgs.getViewName();
+      couchbaseDocsPerPage = importViewArgs.getDocumentsPerPage();
+    }
+
+
+    private CouchbaseClient connectToCouchbase() throws IOException {
       CouchbaseClient couchbaseClient;
 
       LOGGER.info("Connecting to Couchbase...");
       try {
-        couchbaseClient = new CouchbaseClient(urls, bucket, password);
+        couchbaseClient = new CouchbaseClient(couchbaseUrls, couchbaseBucket, couchbasePassword);
         LOGGER.info("Connected to Couchbase.");
       } catch (IOException e) {
         LOGGER.error(ExceptionUtils.getStackTrace(e));
@@ -182,20 +231,31 @@ public class CouchbaseViewInputFormat extends InputFormat<Text, ViewRow> {
       return couchbaseClient;
     }
 
+    private void disconnectFromCouchbase() {
+      if(couchbaseClient!=null) {
+        couchbaseClient.shutdown();
+        couchbaseClient = null;
+      }
+    }
+
     @Override
     public boolean nextKeyValue() throws IOException, InterruptedException {
+      //If we can get a new row, we're fine
       if (nextRow()) {
         return true;
-      } else {
-        if (pages.hasNext()) {
-          ViewResponse viewResponse = pages.next();
-          rowIterator = viewResponse.iterator();
-          return nextRow();
-        } else {
-          finished = true;
-          return false;
-        }
       }
+
+      //Try to get next page
+      if (pages.hasNext()) {
+        ViewResponse viewResponse = pages.next();
+        rowIterator = viewResponse.iterator();
+        return nextRow();
+      }
+
+      finished = true;
+      return false;
+
+
     }
 
     private boolean nextRow() {
@@ -239,6 +299,29 @@ public class CouchbaseViewInputFormat extends InputFormat<Text, ViewRow> {
     }
   }
 
+  @Override
+  public List<InputSplit> getSplits(JobContext jobContext) throws IOException, InterruptedException {
+    List<InputSplit> inputSplits = new ArrayList<InputSplit>();
+    String[] viewKeys = ImportViewArgs.parseViewKeys(jobContext.getConfiguration());
+
+    //int viewKeysPerMapTask = 2;
+
+    for (String viewKey : viewKeys) {
+      CouchbaseViewInputSplit inputSplit = new CouchbaseViewInputSplit();
+      inputSplit.addKey(viewKey);
+      inputSplits.add(inputSplit);
+    }
+
+    return inputSplits;
+  }
+
+  @Override
+  public RecordReader<Text, ViewRow> createRecordReader(InputSplit inputSplit, TaskAttemptContext taskAttemptContext)
+    throws IOException, InterruptedException {
+    return new CouchbaseViewRecordReader();
+  }
+
+
   public static void initJob(Job job, String urls, String bucket, String password,
                              String designDocumentName, String viewName, String viewKeys) {
     job.setInputFormatClass(CouchbaseViewInputFormat.class);
@@ -257,21 +340,4 @@ public class CouchbaseViewInputFormat extends InputFormat<Text, ViewRow> {
     conf.set(ImportViewArgs.ARG_VIEW_KEYS.getPropertyName(), viewKeys);
   }
 
-  @Override
-  public List<InputSplit> getSplits(JobContext jobContext) throws IOException, InterruptedException {
-    List<InputSplit> inputSplits = new ArrayList<InputSplit>();
-    String[] viewKeys = ImportViewArgs.parseViewKeys(jobContext.getConfiguration());
-
-    for (String viewKey : viewKeys) {
-      inputSplits.add(new CouchbaseViewInputSplit(viewKey));
-    }
-
-    return inputSplits;
-  }
-
-  @Override
-  public RecordReader<Text, ViewRow> createRecordReader(InputSplit inputSplit, TaskAttemptContext taskAttemptContext)
-      throws IOException, InterruptedException {
-    return new CouchbaseViewRecordReader();
-  }
 }
