@@ -20,6 +20,7 @@
 package com.avira.couchdoop.imp;
 
 import com.avira.couchdoop.ArgsException;
+import com.avira.couchdoop.ArgsHelper;
 import com.avira.couchdoop.CouchbaseArgs;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
@@ -44,62 +45,52 @@ public class ImportViewArgs extends CouchbaseArgs {
 
   private int documentsPerPage;
 
-  public static final ArgDef ARG_DESIGNDOC_NAME = new ArgDef('d', "couchbase.designDoc.name");
-  public static final ArgDef ARG_VIEW_NAME = new ArgDef('v', "couchbase.view.name");
-  public static final ArgDef ARG_VIEW_KEYS = new ArgDef('k', "couchbase.view.keys");
-  public static final ArgDef ARG_OUTPUT = new ArgDef('o', "output");
-  public static final ArgDef ARG_DOCS_PER_PAGE = new ArgDef('P', "couchbase.view.docsPerPage");
-
+  public static final ArgDef ARG_DESIGNDOC_NAME = new ArgDef('d', "couchbase.designDoc.name", true, true,
+      "(required) name of the design document");
+  public static final ArgDef ARG_VIEW_NAME = new ArgDef('v', "couchbase.view.name", true, true,
+      "(required) name of the view");
+  public static final ArgDef ARG_VIEW_KEYS = new ArgDef('k', "couchbase.view.keys", true, true,
+      "(required) semicolon separated list of view keys (in JSON format) which are going to be distributed to mappers");
+  public static final ArgDef ARG_OUTPUT = new ArgDef('o', "output", true, true,
+      "(required) HDFS output directory");
+  public static final ArgDef ARG_DOCS_PER_PAGE = new ArgDef('P', "couchbase.view.docsPerPage", true, false,
+      "buffer of documents which are going to be retrieved at once at a mapper; defaults to 1024");
   private static final char KEYS_STRING_SEPARATOR = ';';
 
-  public ImportViewArgs(Configuration hadoopConfiguration) throws ArgsException {
-    super(hadoopConfiguration);
+  public static final List<ArgDef> ARGS_LIST = new ArrayList<>(5);
+  static {
+    ARGS_LIST.add(ARG_DESIGNDOC_NAME);
+    ARGS_LIST.add(ARG_VIEW_NAME);
+    ARGS_LIST.add(ARG_VIEW_KEYS);
+    ARGS_LIST.add(ARG_OUTPUT);
+    ARGS_LIST.add(ARG_DOCS_PER_PAGE);
+
+    ARGS_LIST.addAll(CouchbaseArgs.ARGS_LIST);
   }
 
-  @Deprecated
-  public ImportViewArgs(Configuration hadoopConfiguration, String[] cliArgs) throws ArgsException {
-    super(hadoopConfiguration, cliArgs);
+  public ImportViewArgs() {
+    super();
   }
 
-  @Override
-  protected Options getCliOptions() {
-    Options options = super.getCliOptions();
-
-    addOption(options, ARG_DESIGNDOC_NAME, true, true,
-        "(required) name of the design document");
-    addOption(options, ARG_VIEW_NAME, true, true,
-        "(required) name of the view");
-    addOption(options, ARG_VIEW_KEYS, true, true,
-        "(required) semicolon separated list of view keys (in JSON format) which are going to be distributed to mappers");
-    addOption(options, ARG_OUTPUT, true, true,
-        "(required) HDFS output directory");
-    addOption(options, ARG_DOCS_PER_PAGE, true, false,
-        "buffer of documents which are going to be retrieved at once at a mapper; defaults to 1024");
-
-    return options;
+  public ImportViewArgs(Configuration conf) throws ArgsException {
+    super(conf);
   }
 
   @Override
-  public void loadHadoopConfiguration() throws ArgsException {
-    super.loadHadoopConfiguration();
-
-    designDocumentName = hadoopConfiguration.get(ARG_DESIGNDOC_NAME.getPropertyName());
-    viewName = hadoopConfiguration.get(ARG_VIEW_NAME.getPropertyName());
-    viewKeys = getViewKeys(hadoopConfiguration);
-    output = hadoopConfiguration.get(ARG_OUTPUT.getPropertyName());
-
-    documentsPerPage = hadoopConfiguration.getInt(ARG_DOCS_PER_PAGE.getPropertyName(), 1024);
+  public List<ArgDef> getArgsList(){
+    return ImportViewArgs.ARGS_LIST;
   }
 
   @Override
-  protected void loadCliArgsIntoHadoopConfiguration(CommandLine cl) throws ArgsException {
-    super.loadCliArgsIntoHadoopConfiguration(cl);
+  public void loadFromHadoopConfiguration(Configuration conf) throws ArgsException {
+    super.loadFromHadoopConfiguration(conf);
 
-    setPropertyFromCliArg(cl, ARG_DESIGNDOC_NAME);
-    setPropertyFromCliArg(cl, ARG_VIEW_NAME);
-    setPropertyFromCliArg(cl, ARG_VIEW_KEYS);
-    setPropertyFromCliArg(cl, ARG_OUTPUT);
-    setPropertyFromCliArg(cl, ARG_DOCS_PER_PAGE);
+    designDocumentName = conf.get(ARG_DESIGNDOC_NAME.getPropertyName());
+    viewName = conf.get(ARG_VIEW_NAME.getPropertyName());
+    viewKeys = getViewKeys(conf);
+    output = conf.get(ARG_OUTPUT.getPropertyName());
+
+    documentsPerPage = conf.getInt(ARG_DOCS_PER_PAGE.getPropertyName(), 1024);
   }
 
   public String getDesignDocumentName() {

@@ -20,11 +20,12 @@
 package com.avira.couchdoop.imp;
 
 import com.avira.couchdoop.ArgsException;
+import com.avira.couchdoop.ArgsHelper;
 import com.couchbase.client.CouchbaseClient;
 import com.couchbase.client.protocol.views.*;
+import org.apache.commons.cli.CommandLine;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,8 +42,9 @@ public class CouchbaseViewSerialImporter {
   public void start(String[] args)
       throws ArgsException {
     Configuration conf = new Configuration();
-    ImportViewArgs iva;
-    iva = new ImportViewArgs(conf, args);
+
+    ArgsHelper.loadCliArgsIntoHadoopConf(conf,ImportViewArgs.ARGS_LIST,args);
+    ImportViewArgs iva = new ImportViewArgs(conf);
 
     // Connect to couchbase and get the view.
     CouchbaseClient couchbaseClient;

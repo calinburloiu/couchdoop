@@ -20,6 +20,7 @@
 package com.avira.couchdoop.imp;
 
 import com.avira.couchdoop.ArgsException;
+import com.avira.couchdoop.ArgsHelper;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
@@ -59,9 +60,9 @@ public class CouchbaseViewToHBaseImporter extends Configured implements Tool {
   @Override
   public int run(String[] args) throws ArgsException {
     Configuration conf = getConf();
-    ImportViewToHBaseArgs importViewToHBaseArgs;
-    importViewToHBaseArgs = new ImportViewToHBaseArgs(conf);
-    importViewToHBaseArgs.loadCliArgs(args);
+
+    ArgsHelper.loadCliArgsIntoHadoopConf(conf, ImportViewToHBaseArgs.ARGS_LIST, args);
+    ImportViewToHBaseArgs importViewToHBaseArgs = new ImportViewToHBaseArgs(conf);
 
     Job job;
     boolean exitStatus = true;
