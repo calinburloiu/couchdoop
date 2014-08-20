@@ -17,13 +17,14 @@
  * under the License.
  */
 
-package com.avira.couchdoop.imp;
+package com.avira.couchdoop.jobs;
 
 import com.avira.couchdoop.ArgsException;
 import com.avira.couchdoop.ArgsHelper;
+import com.avira.couchdoop.imp.ImportViewArgs;
+import com.avira.couchdoop.imp.PageFileWriter;
 import com.couchbase.client.CouchbaseClient;
 import com.couchbase.client.protocol.views.*;
-import org.apache.commons.cli.CommandLine;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.slf4j.Logger;
@@ -43,7 +44,7 @@ public class CouchbaseViewSerialImporter {
       throws ArgsException {
     Configuration conf = new Configuration();
 
-    ArgsHelper.loadCliArgsIntoHadoopConf(conf,ImportViewArgs.ARGS_LIST,args);
+    ArgsHelper.loadCliArgsIntoHadoopConf(conf, ImportViewArgs.ARGS_LIST,args);
     ImportViewArgs iva = new ImportViewArgs(conf);
 
     // Connect to couchbase and get the view.

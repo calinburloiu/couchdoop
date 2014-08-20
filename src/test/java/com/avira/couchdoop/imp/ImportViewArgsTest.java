@@ -1,13 +1,16 @@
 package com.avira.couchdoop.imp;
 
-import com.avira.couchdoop.imp.ImportViewArgs;
 import org.junit.Test;
+
+import java.util.Arrays;
+import java.util.List;
+
 import static org.junit.Assert.*;
 
 public class ImportViewArgsTest {
 
   @Test
-  public void getViewKeysTest(){
+  public void splitViewKeysTest() {
     String[] tests = new String[]{
         "[\"20140720\",0];[\"20140720\",1];[\"20140720\",2];[\"20140720\",3]",
         "[\"201407;20\",0];[\"20140720\",1];[\"20140720\",2];[\"20140720\",3]",
@@ -16,8 +19,45 @@ public class ImportViewArgsTest {
     };
 
     for(String test: tests) {
-      String[] splits = ImportViewArgs.getViewKeys(test);
-      assertEquals("Number of splits is not correct!", 4, splits.length);
+      List<String> splits = ImportViewArgs.splitViewKeys(test);
+      assertEquals("Number of splits is not correct!", 4, splits.size());
     }
   }
+
+
+    @Test
+    public void parseViewKeysTest() {
+        String[] tests = new String[] {
+                "[\"201407((01-31))\",0];[\"20140720\",1];[\"20140720\",2];[\"20140720\",3]",
+        };
+
+        for(String test: tests) {
+            String[] keys = ImportViewArgs.parseViewKeys(test);
+            System.out.println(Arrays.toString(keys));
+            assertEquals("Number of keys is not correct!", 34, keys.length);
+        }
+    }
+
+  @Test
+  public void parseViewKeysPaddingTest() {
+    String keysString = "2014-07-((08-12))";
+
+    String[] keys = ImportViewArgs.parseViewKeys(keysString);
+    assertEquals("Number of keys is not correct!", "2014-07-09", keys[1]);
+
+  }
+
+
+
+    @Test
+    public void parseViewKeysTest2() {
+        String keysString = "\"2014-07-07\";\"2014-07-08\"";
+
+        String[] keys = ImportViewArgs.parseViewKeys(keysString);
+        System.out.println(Arrays.toString(keys));
+        assertEquals("Number of keys is not correct!", 2, keys.length);
+    }
+
+
+
 }

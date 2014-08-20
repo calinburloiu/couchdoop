@@ -17,19 +17,19 @@
  * under the License.
  */
 
-package com.avira.couchdoop.imp;
+package com.avira.couchdoop.jobs;
 
 import com.avira.couchdoop.ArgsException;
 import com.avira.couchdoop.ArgsHelper;
+import com.avira.couchdoop.exp.CouchbaseAction;
+import com.avira.couchdoop.exp.CouchbaseOutputFormat;
+import com.avira.couchdoop.exp.CsvToCouchbaseMapper;
+import com.avira.couchdoop.exp.ExportArgs;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.hbase.mapreduce.IdentityTableReducer;
-import org.apache.hadoop.hbase.mapreduce.TableMapReduceUtil;
-import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
-import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 import org.slf4j.Logger;
@@ -38,11 +38,11 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 
 /**
- * Instances of this class import documents of Couchbase view keys in HDFS files.
+ * Instances of this class export key-values from HDFS files into documents from Couchbase.
  */
-public class CouchbaseViewToHBaseImporter extends Configured implements Tool {
+public class CouchbaseExporter extends Configured implements Tool {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(CouchbaseViewToHBaseImporter.class);
+  private static final Logger LOGGER = LoggerFactory.getLogger(CouchbaseExporter.class);
 
   public void start(String[] args) throws ArgsException {
     int exitCode = 0;
@@ -58,16 +58,16 @@ public class CouchbaseViewToHBaseImporter extends Configured implements Tool {
   }
 
   @Override
-  public int run(String[] args) throws ArgsException {
+  public int run(String[] args) throws Exception {
     Configuration conf = getConf();
 
-    ArgsHelper.loadCliArgsIntoHadoopConf(conf, ImportViewToHBaseArgs.ARGS_LIST, args);
-    ImportViewToHBaseArgs importViewToHBaseArgs = new ImportViewToHBaseArgs(conf);
+    ArgsHelper.loadCliArgsIntoHadoopConf(conf, ExportArgs.ARGS_LIST, args);
+    ExportArgs exportArgs = new ExportArgs(conf);
 
     Job job;
     boolean exitStatus = true;
     try {
-      job = configureJob(conf, importViewToHBaseArgs.getTable());
+      job = configureJob(conf, exportArgs.getInput());
       exitStatus = job.waitForCompletion(true);
     } catch (Exception e) {
       LOGGER.error(ExceptionUtils.getStackTrace(e));
@@ -76,13 +76,13 @@ public class CouchbaseViewToHBaseImporter extends Configured implements Tool {
     return exitStatus ? 0 : 2;
   }
 
-  public Job configureJob(Configuration conf, String outputTable) throws IOException {
+  public Job configureJob(Configuration conf, String input) throws IOException {
     conf.setInt("mapreduce.map.failures.maxpercent", 5);
     conf.setInt("mapred.max.map.failures.percent", 5);
     conf.setInt("mapred.max.tracker.failures", 20);
 
     Job job = Job.getInstance(conf);
-    job.setJarByClass(CouchbaseViewToHBaseImporter.class);
+    job.setJarByClass(CouchbaseExporter.class);
 
     // User classpath takes precedence in favor of Hadoop classpath.
     // This is because the Couchbase client requires a newer version of
@@ -90,16 +90,20 @@ public class CouchbaseViewToHBaseImporter extends Configured implements Tool {
     job.setUserClassesTakesPrecedence(true);
 
     // Input
-    job.setInputFormatClass(CouchbaseViewInputFormat.class);
+    FileInputFormat.setInputPaths(job, input);
 
     // Mapper
-    job.setMapperClass(CouchbaseViewToHBaseMapper.class);
+    job.setMapperClass(CsvToCouchbaseMapper.class);
+    job.setMapOutputKeyClass(String.class);
+    job.setMapOutputValueClass(CouchbaseAction.class);
 
     // Reducer
     job.setNumReduceTasks(0);
 
     // Output
-    TableMapReduceUtil.initTableReducerJob(outputTable, IdentityTableReducer.class, job);
+    job.setOutputFormatClass(CouchbaseOutputFormat.class);
+    job.setOutputKeyClass(String.class);
+    job.setOutputValueClass(CouchbaseAction.class);
 
     return job;
   }
