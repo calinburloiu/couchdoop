@@ -37,7 +37,6 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.net.URI;
 import java.util.*;
-import java.util.concurrent.CancellationException;
 
 /**
  * This input format reads documents from a Couchbase view queried by a list of view keys.
@@ -111,19 +110,18 @@ public class CouchbaseViewInputFormat extends InputFormat<Text, ViewRow> {
     private String couchbaseViewName;
     private int couchbaseDocsPerPage;
 
+    private Queue<String> keyQueue = new LinkedList<>();
+    private int totalNumKeys;
 
     private CouchbaseClient couchbaseClient;
     private View view;
-    private Queue<String> keyQueue = new LinkedList<>();
-    private Paginator pages;
+    private Paginator paginator;
     private Iterator<ViewRow> rowIterator;
 
     private Text key = new Text();
     private ViewRow value;
 
     private boolean finished = false;
-
-    public static final int CONNECT_RETRIES = 5;
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CouchbaseViewRecordReader.class);
 
@@ -133,62 +131,51 @@ public class CouchbaseViewInputFormat extends InputFormat<Text, ViewRow> {
       //Add all keys to a queue
       CouchbaseViewInputSplit couchbaseViewInputSplit = (CouchbaseViewInputSplit) inputSplit;
       keyQueue.addAll(couchbaseViewInputSplit.getKeys());
+      totalNumKeys = keyQueue.size();
 
       if (0 == keyQueue.size()) {
         //No keys
         return;
       }
 
-      // Connect to Couchbase. Retry a few times on cancellation.
-      int retryNo;
-      for (retryNo = 1; retryNo <= CONNECT_RETRIES; retryNo++) {
-        view = getCouchbaseView();
-
-        Query query = getQueryForNextKey();
-        pages = couchbaseClient.paginatedQuery(view, query, couchbaseDocsPerPage);
-
-        try {
-          if (pages.hasNext()) {
-            ViewResponse viewResponse = pages.next();
-            rowIterator = viewResponse.iterator();
-          }
-        } catch (CancellationException e) {
-          LOGGER.error("Attempt no. {} to connect to Couchbase for querying view {} failed due to: {}",
-            retryNo, couchbaseViewInputSplit.getKeys().get(0), ExceptionUtils.getFullStackTrace(e));
-          disconnectFromCouchbase();
-          continue;
-        }
-
-        // Connection was successfully established because no exception was thrown.
-        break;
-      }
-
-      if (retryNo == CONNECT_RETRIES) {
-        throw new RuntimeException("Failed to connect to Couchbase after " + CONNECT_RETRIES +
-          " retries.");
-      }
+      initCouchbaseClient();
+      initCouchbaseView();
+      initNextRowIterator();
     }
 
-    private Query getQueryForNextKey() {
-      Query query = new Query();
-      String key = keyQueue.poll();
-      if(key == null){
-        return null;
+
+    private boolean initNextRowIterator() {
+      if ( (paginator != null) && paginator.hasNext() ) {
+        //We have a next page, get the row iterator from there
+        rowIterator = paginator.next().iterator();
+        return true;
       }
+
+      String nextKey = keyQueue.poll();
+      if(nextKey == null) {
+        //No more keys, no more row iterators, return null
+        return false;
+      }
+
+      Query query = getQueryForKey(nextKey);
+      paginator = couchbaseClient.paginatedQuery(view, query, couchbaseDocsPerPage);
+
+      //Loaded a new Paginator, start over
+      return initNextRowIterator();
+    }
+
+    private Query getQueryForKey(String key) {
+      Query query = new Query();
       query.setKey(key);
       query.setIncludeDocs(true);
       return query;
     }
 
 
-    private View getCouchbaseView() throws IOException {
-      if(couchbaseClient == null) {
-        couchbaseClient = connectToCouchbase();
-      }
-
+    private void initCouchbaseView() throws IOException {
       // Prepare for querying the Couchbase view.
       LOGGER.info("Querying Couchbase for view {}...");
-      return couchbaseClient.getView(couchbaseDesignDocName, couchbaseViewName);
+      view = couchbaseClient.getView(couchbaseDesignDocName, couchbaseViewName);
     }
 
 
@@ -216,8 +203,9 @@ public class CouchbaseViewInputFormat extends InputFormat<Text, ViewRow> {
     }
 
 
-    private CouchbaseClient connectToCouchbase() throws IOException {
-      CouchbaseClient couchbaseClient;
+    private void initCouchbaseClient() throws IOException {
+      //Skip if couchbaseClient is already set
+      if(couchbaseClient != null) { return; }
 
       LOGGER.info("Connecting to Couchbase...");
       try {
@@ -227,15 +215,14 @@ public class CouchbaseViewInputFormat extends InputFormat<Text, ViewRow> {
         LOGGER.error(ExceptionUtils.getStackTrace(e));
         throw e;
       }
-
-      return couchbaseClient;
     }
 
     private void disconnectFromCouchbase() {
-      if(couchbaseClient!=null) {
-        couchbaseClient.shutdown();
-        couchbaseClient = null;
-      }
+      //Skip if couchbaseClient is not set
+      if(couchbaseClient==null) { return; }
+      LOGGER.info("Disconnecting from Couchbase...");
+      couchbaseClient.shutdown();
+      couchbaseClient = null;
     }
 
     @Override
@@ -245,32 +232,23 @@ public class CouchbaseViewInputFormat extends InputFormat<Text, ViewRow> {
         return true;
       }
 
-      //Try to get next page
-      if (pages.hasNext()) {
-        ViewResponse viewResponse = pages.next();
-        rowIterator = viewResponse.iterator();
-        return nextRow();
+      //Try to get a new rowIterator and make another attempt
+      while(initNextRowIterator()) {
+        if (nextRow()) {
+          return true;
+        }
       }
 
-      finished = true;
       return false;
-
-
     }
 
     private boolean nextRow() {
-      if (rowIterator == null) {
+      if (rowIterator == null || !rowIterator.hasNext()) {
         return false;
       }
-
-      if (rowIterator.hasNext()) {
-        value = rowIterator.next();
-        key.set(value.getId());
-
-        return true;
-      }
-
-      return false;
+      value = rowIterator.next();
+      key.set(value.getId());
+      return true;
     }
 
     @Override
@@ -285,30 +263,45 @@ public class CouchbaseViewInputFormat extends InputFormat<Text, ViewRow> {
 
     @Override
     public float getProgress() throws IOException, InterruptedException {
-      if (finished) {
-        return 1.0f;
-      }
-
-      return 0.0f;
+      return (float) ( (totalNumKeys - keyQueue.size()) / totalNumKeys );
     }
 
     @Override
     public void close() throws IOException {
-      LOGGER.info("Disconnecting from Couchbase...");
-      couchbaseClient.shutdown();
+      disconnectFromCouchbase();
     }
   }
+
 
   @Override
   public List<InputSplit> getSplits(JobContext jobContext) throws IOException, InterruptedException {
     List<InputSplit> inputSplits = new ArrayList<InputSplit>();
-    String[] viewKeys = ImportViewArgs.parseViewKeys(jobContext.getConfiguration());
 
-    //int viewKeysPerMapTask = 2;
+    ImportViewArgs importViewArgs;
+    try {
+      importViewArgs = new ImportViewArgs(jobContext.getConfiguration());
+    } catch (ArgsException e) {
+      throw new RuntimeException("ImportViewArgs can't load settings from Hadoop Configuration");
+    }
+    String[] viewKeys = importViewArgs.getViewKeys();
+    int viewKeysPerMapTask = (int) Math.ceil(viewKeys.length / importViewArgs.getNumMappers());
+
+    CouchbaseViewInputSplit inputSplit = new CouchbaseViewInputSplit();
+    int keysInCurrentSplit = 0;
 
     for (String viewKey : viewKeys) {
-      CouchbaseViewInputSplit inputSplit = new CouchbaseViewInputSplit();
+      //If we have enough keys, add the split and create a new one
+      if(keysInCurrentSplit == viewKeysPerMapTask) {
+        inputSplits.add(inputSplit);
+        inputSplit = new CouchbaseViewInputSplit();
+        keysInCurrentSplit = 0;
+      }
       inputSplit.addKey(viewKey);
+      keysInCurrentSplit++;
+    }
+
+    //Be sure to add any leftover keys
+    if(keysInCurrentSplit>0){
       inputSplits.add(inputSplit);
     }
 

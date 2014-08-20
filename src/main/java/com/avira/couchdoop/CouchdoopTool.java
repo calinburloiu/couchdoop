@@ -19,10 +19,10 @@
 
 package com.avira.couchdoop;
 
-import com.avira.couchdoop.exp.CouchbaseExporter;
-import com.avira.couchdoop.imp.CouchbaseViewImporter;
-import com.avira.couchdoop.imp.CouchbaseViewSerialImporter;
-import com.avira.couchdoop.imp.CouchbaseViewToHBaseImporter;
+import com.avira.couchdoop.jobs.CouchbaseExporter;
+import com.avira.couchdoop.jobs.CouchbaseViewImporter;
+import com.avira.couchdoop.jobs.CouchbaseViewSerialImporter;
+import com.avira.couchdoop.jobs.CouchbaseViewToHBaseImporter;
 import com.avira.couchdoop.update.BenchmarkUpdater;
 
 import java.util.Arrays;

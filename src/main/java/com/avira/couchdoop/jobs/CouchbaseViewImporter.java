@@ -17,11 +17,13 @@
  * under the License.
  */
 
-package com.avira.couchdoop.imp;
+package com.avira.couchdoop.jobs;
 
 import com.avira.couchdoop.ArgsException;
 import com.avira.couchdoop.ArgsHelper;
-import org.apache.commons.cli.CommandLine;
+import com.avira.couchdoop.imp.CouchbaseViewInputFormat;
+import com.avira.couchdoop.imp.CouchbaseViewToFileMapper;
+import com.avira.couchdoop.imp.ImportViewArgs;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
@@ -60,7 +62,7 @@ public class CouchbaseViewImporter extends Configured implements Tool {
   public int run(String[] args) throws ArgsException {
     Configuration conf = getConf();
 
-    ArgsHelper.loadCliArgsIntoHadoopConf(conf,ImportViewArgs.ARGS_LIST,args);
+    ArgsHelper.loadCliArgsIntoHadoopConf(conf, ImportViewArgs.ARGS_LIST,args);
     ImportViewArgs importViewArgs = new ImportViewArgs(conf);
 
     Job job;

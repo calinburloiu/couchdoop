@@ -43,6 +43,8 @@ public class ImportViewArgs extends CouchbaseArgs {
 
   private int documentsPerPage;
 
+  private int numMappers;
+
   public static final ArgDef ARG_DESIGNDOC_NAME = new ArgDef('d', "couchbase.designDoc.name", true, true,
       "(required) name of the design document");
   public static final ArgDef ARG_VIEW_NAME = new ArgDef('v', "couchbase.view.name", true, true,
@@ -53,6 +55,9 @@ public class ImportViewArgs extends CouchbaseArgs {
       "(required) HDFS output directory");
   public static final ArgDef ARG_DOCS_PER_PAGE = new ArgDef('P', "couchbase.view.docsPerPage", true, false,
       "buffer of documents which are going to be retrieved at once at a mapper; defaults to 1024");
+  public static final ArgDef ARG_NUM_MAPPERS = new ArgDef('P', "hadoop.mappers", true, false,
+    "number of mappers to be used by Hadoop; by default it will be equal to the number of couchbase view keys passed to the job");
+
 
   private static final char KEYS_STRING_SEPARATOR = ';';
   private static final String[] MULTI_KEY_ESCAPE_SEQUENCE = new String[]{"\\(\\(", "\\)\\)"};
@@ -64,6 +69,7 @@ public class ImportViewArgs extends CouchbaseArgs {
     ARGS_LIST.add(ARG_VIEW_KEYS);
     ARGS_LIST.add(ARG_OUTPUT);
     ARGS_LIST.add(ARG_DOCS_PER_PAGE);
+    ARGS_LIST.add(ARG_NUM_MAPPERS);
 
     ARGS_LIST.addAll(CouchbaseArgs.ARGS_LIST);
   }
@@ -90,6 +96,8 @@ public class ImportViewArgs extends CouchbaseArgs {
     viewKeys = parseViewKeys(conf);
     output = conf.get(ARG_OUTPUT.getPropertyName());
     documentsPerPage = conf.getInt(ARG_DOCS_PER_PAGE.getPropertyName(), 1024);
+    //numMappers default to the number of viewKeys
+    numMappers = conf.getInt(ARG_NUM_MAPPERS.getPropertyName(), viewKeys.length);
   }
 
   public String getDesignDocumentName() {
@@ -104,9 +112,14 @@ public class ImportViewArgs extends CouchbaseArgs {
     return viewKeys;
   }
 
-  public static String[] parseViewKeys(Configuration hadoopConfiguration) {
-    return parseViewKeys(hadoopConfiguration.get(ARG_VIEW_KEYS.getPropertyName()));
+  public int getNumMappers() {
+    return numMappers;
   }
+
+  protected static String[] parseViewKeys(Configuration hadoopConf) {
+    return parseViewKeys(hadoopConf.get(ARG_VIEW_KEYS.getPropertyName()));
+  }
+
 
   protected static String[] parseViewKeys(String viewKeysString) {
       List<String> splits = splitViewKeys(viewKeysString);
