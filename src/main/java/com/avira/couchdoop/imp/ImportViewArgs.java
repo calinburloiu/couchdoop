@@ -55,7 +55,7 @@ public class ImportViewArgs extends CouchbaseArgs {
       "(required) HDFS output directory");
   public static final ArgDef ARG_DOCS_PER_PAGE = new ArgDef('P', "couchbase.view.docsPerPage", true, false,
       "buffer of documents which are going to be retrieved at once at a mapper; defaults to 1024");
-  public static final ArgDef ARG_NUM_MAPPERS = new ArgDef('P', "hadoop.mappers", true, false,
+  public static final ArgDef ARG_NUM_MAPPERS = new ArgDef('m', "hadoop.mappers", true, false,
     "number of mappers to be used by Hadoop; by default it will be equal to the number of couchbase view keys passed to the job");
 
 

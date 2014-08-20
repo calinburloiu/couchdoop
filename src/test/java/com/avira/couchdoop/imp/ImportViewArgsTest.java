@@ -38,6 +38,16 @@ public class ImportViewArgsTest {
         }
     }
 
+  @Test
+  public void parseViewKeysPaddingTest() {
+    String keysString = "2014-07-((08-12))";
+
+    String[] keys = ImportViewArgs.parseViewKeys(keysString);
+    assertEquals("Number of keys is not correct!", "2014-07-09", keys[1]);
+
+  }
+
+
 
     @Test
     public void parseViewKeysTest2() {

@@ -272,6 +272,7 @@ public class CouchbaseViewInputFormat extends InputFormat<Text, ViewRow> {
     }
   }
 
+  private static final Logger LOGGER = LoggerFactory.getLogger(CouchbaseViewInputFormat.class);
 
   @Override
   public List<InputSplit> getSplits(JobContext jobContext) throws IOException, InterruptedException {
@@ -284,7 +285,10 @@ public class CouchbaseViewInputFormat extends InputFormat<Text, ViewRow> {
       throw new RuntimeException("ImportViewArgs can't load settings from Hadoop Configuration");
     }
     String[] viewKeys = importViewArgs.getViewKeys();
-    int viewKeysPerMapTask = (int) Math.ceil(viewKeys.length / importViewArgs.getNumMappers());
+    int viewKeysPerMapTask = (int) Math.ceil((double)viewKeys.length / importViewArgs.getNumMappers());
+
+    LOGGER.info("Number of keys per map task is {} ({} / {})",
+      viewKeysPerMapTask,viewKeys.length, importViewArgs.getNumMappers());
 
     CouchbaseViewInputSplit inputSplit = new CouchbaseViewInputSplit();
     int keysInCurrentSplit = 0;
