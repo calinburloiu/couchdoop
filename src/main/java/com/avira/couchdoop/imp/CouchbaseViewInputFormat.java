@@ -125,6 +125,7 @@ public class CouchbaseViewInputFormat extends InputFormat<Text, ViewRow> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CouchbaseViewRecordReader.class);
 
+    @Override
     public void initialize(InputSplit inputSplit, TaskAttemptContext context) throws IOException, InterruptedException {
       initCouchbaseArgs(context);
 
@@ -153,7 +154,7 @@ public class CouchbaseViewInputFormat extends InputFormat<Text, ViewRow> {
 
       String nextKey = keyQueue.poll();
       if(nextKey == null) {
-        //No more keys, no more row iterators, return null
+        //No more keys, no more row iterators, return false
         return false;
       }
 
@@ -174,7 +175,7 @@ public class CouchbaseViewInputFormat extends InputFormat<Text, ViewRow> {
 
     private void initCouchbaseView() throws IOException {
       // Prepare for querying the Couchbase view.
-      LOGGER.info("Querying Couchbase for view {}...");
+      LOGGER.info("Querying Couchbase for view {}...", couchbaseViewName);
       view = couchbaseClient.getView(couchbaseDesignDocName, couchbaseViewName);
     }
 
@@ -263,7 +264,7 @@ public class CouchbaseViewInputFormat extends InputFormat<Text, ViewRow> {
 
     @Override
     public float getProgress() throws IOException, InterruptedException {
-      return (float) ( (totalNumKeys - keyQueue.size()) / totalNumKeys );
+      return  (float)(totalNumKeys - keyQueue.size()) / totalNumKeys ;
     }
 
     @Override
@@ -304,10 +305,8 @@ public class CouchbaseViewInputFormat extends InputFormat<Text, ViewRow> {
       keysInCurrentSplit++;
     }
 
-    //Be sure to add any leftover keys
-    if(keysInCurrentSplit>0){
-      inputSplits.add(inputSplit);
-    }
+    //Also add last inputSplit
+    inputSplits.add(inputSplit);
 
     return inputSplits;
   }
