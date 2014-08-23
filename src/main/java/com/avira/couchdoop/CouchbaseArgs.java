@@ -71,8 +71,8 @@ public class CouchbaseArgs extends Args {
       }
     }
 
-    bucket = conf.get(ARG_COUCHBASE_BUCKET.getPropertyName());
-    password = conf.get(ARG_COUCHBASE_PASSWORD.getPropertyName());
+    bucket = conf.get(ARG_COUCHBASE_BUCKET.getPropertyName(), "default");
+    password = conf.get(ARG_COUCHBASE_PASSWORD.getPropertyName(), "");
   }
 
   @Override
