@@ -53,9 +53,6 @@ public class CouchbaseArgs extends Args {
     ARGS_LIST.add(ARG_COUCHBASE_PASSWORD);
   }
 
-  public CouchbaseArgs() {
-  }
-
   public CouchbaseArgs(Configuration conf) throws ArgsException {
     super(conf);
   }

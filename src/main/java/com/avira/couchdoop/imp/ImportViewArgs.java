@@ -75,10 +75,6 @@ public class ImportViewArgs extends CouchbaseArgs {
     ARGS_LIST.addAll(CouchbaseArgs.ARGS_LIST);
   }
 
-  public ImportViewArgs() {
-    super();
-  }
-
   public ImportViewArgs(Configuration conf) throws ArgsException {
     super(conf);
   }

@@ -31,7 +31,8 @@ Couchdoop command line tool provides a way to:
 * **import** data from Couchbase into Hadoop by using a Couchbase view
 * **export** data from a Hadoop CSV file into Couchbase.
 
-The tool is implementated as a Hadoop `Tool` job so it can be run by providing the Couchdoop JAR to `hadoop jar` command. In order to create the JAR you need to compile the project with Maven. Run the following command in Couchdoop root directory:
+The tool is implementated as a Hadoop `Tool` job so it can be run by providing the Couchdoop JAR to `hadoop jar` command. In order to create the JAR you need to compile the project with Maven. 
+Run the following command in Couchdoop root directory:
 
 ```
 mvn package
@@ -65,8 +66,10 @@ Add options as explained in the below table to perform an import:
 | `-k`,`--couchbase-view-keys`        | (required) semicolon separated list of view keys (in JSON format) which are going to be distributed to mappers
 | `-o`,`--output`                     | (required) HDFS output directory
 | `-P`,`--couchbase-view-docsperpage` | buffer of documents which are going to be retrieved at once at a mapper; defaults to 1024
+| `-m`,`--hadoop-mappers`             | number of mappers to be used by Hadoop; by default it will be equal to the number of couchbase view keys passed to the job
 
-The following example imports all documents from Couchbase view "clicks" from design document "tracking". See [Couchbase Views](http://docs.couchbase.com/couchbase-sdk-java-1.4/#querying-views) documentation for more details about views. The output is written in HDFS in file "/user/johnny/clicks".
+The following example imports all documents from Couchbase view "clicks" from design document "tracking". 
+See [Couchbase Views](http://docs.couchbase.com/couchbase-sdk-java-1.4/#querying-views) documentation for more details about views. The output is written in HDFS in file "/user/johnny/clicks".
 
 ```bash
 hadoop jar target/couchdoop-${VERSION}-job.jar import \
@@ -78,9 +81,17 @@ hadoop jar target/couchdoop-${VERSION}-job.jar import \
     --output /user/johnny/output
 ```
 
-For argument `--couchbase-view-keys` you must provide a ';' separated list of keys used to query the view. Couchbase accepts array keys for views. In the above example two keys are passed. Each Hadoop _map_ task will take a key to query the view. The many the keys you provide here the more you increase the parallelism.
+For argument `--couchbase-view-keys` you must provide a ';' separated list of keys used to query the view. Couchbase accepts array keys for views. 
+In the above example two keys are passed.
 
-Let's assume that we want to import user click events from Couchbase. For each event we create a document that contains the date in the key. For example, key `click::johnny::1404736126`, contains username "Johnny" and the UNIX time 1404736126 when the click was performed. Behind the key we store the following document which tracks the fact that the user clicked button download on pixel coordinate (23, 46):
+You can control the parallelism with the number of keys you provide and with the `--hadoop-mappers` argument. 
+If the `--hadoop-mappers` argument is not used, each Hadoop _map_ task will take one key to query the view; otherwise the keys will be divided to the specified number of mappers.
+Each mapper will have to query at least a whole key, so you can't have more mappers than couchbase keys.
+
+
+Let's assume that we want to import user click events from Couchbase. For each event we create a document that contains the date in the key. 
+For example, key `click::johnny::1404736126`, contains username "Johnny" and the UNIX time 1404736126 when the click was performed. 
+Behind the key we store the following document which tracks the fact that the user clicked button download on pixel coordinate (23, 46):
 
 ```json
 {
@@ -118,9 +129,13 @@ function (doc, meta) {
 }
 ```
 
-By emitting an array which has the date as the first element this view allows us to import the events by date. The second element of the emitted array is a partition number which allows Couchdoop to split the view query between Hadoop map tasks. If we want to import all click events for April 1, 2014, we use option `--couchbase-view-keys '["20140401",0];["20140401",1]'`. A Hadoop map task will query Couchbase for view key `["20140401",0]` and another one for view key `["20140401",1]`.
+By emitting an array which has the date as the first element this view allows us to import the events by date. 
+The second element of the emitted array is a partition number which allows Couchdoop to split the view query between Hadoop map tasks. 
+If we want to import all click events for April 1, 2014, we use option `--couchbase-view-keys '["20140401",0];["20140401",1]'`. 
+A Hadoop map task will query Couchbase for view key `["20140401",0]` and another one for view key `["20140401",1]`.
 
-The import tool uses `TextOutputFormat` and will emit Couchbase document IDs as Hadoop keys and Couchbase JSON documents as Hadoop values. By default, Hadoop uses tabs as separators between keys and values, but this can be changed by setting `mapred.textoutputformat.separator` property.
+The import tool uses `TextOutputFormat` and will emit Couchbase document IDs as Hadoop keys and Couchbase JSON documents as Hadoop values. 
+By default, Hadoop uses tabs as separators between keys and values, but this can be changed by setting `mapred.textoutputformat.separator` property.
 
 ### Exporting ###
 
