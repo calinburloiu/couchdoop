@@ -226,7 +226,7 @@ into the Hadoop Configuration object (`Configuration conf`) you can use the `Arg
 ArgsHelper.loadCliArgsIntoHadoopConf(conf, ImportViewArgs.ARGS_LIST, args); 
 ``` 
 
-This way, if you have passed `--couchbase-bucket my_bucket` as an argument, it will update the configuration object with property `couchbase.bucket=my_bucket`.
+This way, if you pass `--couchbase-bucket my_bucket` as an argument, it will update the configuration object with property `couchbase.bucket = my_bucket`.
 
 If you also need to read these properties in your code you can use the _getter_ methods of the `ImportArgs` class by creating a new instance like this:  
  
