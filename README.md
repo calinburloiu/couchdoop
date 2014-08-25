@@ -208,15 +208,15 @@ To __update__ existing Couchbase documents from your Hadoop job, you can extend 
 
 ### Arguments and Properties ###
 
-Various components of the Couchdoop library rely on having certain properties configured within the Hadoop Job Configuration object.
+Various components of the Couchdoop library rely on having certain properties configured within the Hadoop Configuration object.
 This is why all the command line argument options available for import and export tools have a corresponding Hadoop Configuration property. 
 For example, `--couchbase-view-keys` corresponds to the `couchbase.view.keys` Hadoop property. 
 Just remove the two dashes from the beginning of the long option names and replace the rest of the dashes with dots.
 
-For example, if you are using Couchdoop in your Hadoop Job to read data from Couchbase, you'll have to set the `couchbase.bucket`
+For example, if you are using Couchdoop in your Hadoop job to read data from Couchbase, you'll have to set the `couchbase.bucket`
 Hadoop property (along with the other properties required for the import) in order to have the `CouchbaseViewInputFormat` work correctly.
 
-While you can take care of setting these properties yourself, you can also choose to have your Hadoop Job uses the same options as 
+While you can take care of setting these properties yourself, you can also choose to have your Hadoop job uses the same options as 
 Couchdoop's import or export tool to keep things simple.
  
 To load all the properties needed for import from the command line arguments (`String[] args`)
