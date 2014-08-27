@@ -35,10 +35,6 @@ public class ImportViewToHBaseArgs extends ImportViewArgs {
     ARGS_LIST.addAll(CouchbaseArgs.ARGS_LIST);
   }
 
-  public ImportViewToHBaseArgs() {
-    super();
-  }
-
   public ImportViewToHBaseArgs(Configuration conf) throws ArgsException {
     super(conf);
   }

@@ -74,9 +74,6 @@ public abstract class Args {
     }
   }
 
-  protected Args() {
-  }
-
   public Args(Configuration conf) throws ArgsException {
     loadFromHadoopConfiguration(conf);
   }
@@ -84,7 +81,7 @@ public abstract class Args {
   /**
    * Populates JavaBean instance fields with data from Hadoop configuration member.
    */
-  protected abstract void loadFromHadoopConfiguration(Configuration conf) throws ArgsException;
+  public abstract void loadFromHadoopConfiguration(Configuration conf) throws ArgsException;
 
   public abstract List<ArgDef> getArgsList();
 

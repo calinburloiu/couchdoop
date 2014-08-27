@@ -37,6 +37,7 @@ public class ExportArgs extends CouchbaseArgs {
   private String input;
 
   private CouchbaseOperation operation;
+
   private int expiry;
 
   private String fieldsDelimiter;
@@ -58,10 +59,6 @@ public class ExportArgs extends CouchbaseArgs {
     ARGS_LIST.add(ARG_DELIMITER_FIELDS);
 
     ARGS_LIST.addAll(CouchbaseArgs.ARGS_LIST);
-  }
-
-  public ExportArgs() {
-    super();
   }
 
   public ExportArgs(Configuration conf) throws ArgsException {
