@@ -94,7 +94,7 @@ inside the keys string passed to `--couchbase-view-keys`, but _only once_ within
 `'["20140401",((0-19))];["20140402",((0-19))]'` will generate a total of 40 keys equivalent to  
 `'["20140401",0];["20140401",1];["20140401",2]; .... ["20140401",19];["20140402",0];["20140401",1]; .... ["20140402",19]'`
 
-`'["201404((01-30))",0];["201404((01-30))",1]'` will correctly generate all dates within the month of april.
+`'["201404((01-30))",0];["201404((01-30))",1]'` will correctly generate all dates within the month of april, automatically detecting leading zeros.
  
 `'["201404((01-30))",((0-19))]'` is currently __not__ possible. 
 
@@ -152,7 +152,7 @@ function (doc, meta) {
 
 By emitting an array which has the date as the first element this view allows us to import the events by date. 
 The second element of the emitted array is a partition number which allows Couchdoop to split the view query between Hadoop map tasks. 
-If we want to import all click events for April 1, 2014, we use option `--couchbase-view-keys '["20140401",0];["20140401",1]'`. 
+If we want to import all click events for April 1, 2014, we use option `--couchbase-view-keys '["20140401",0];["20140401",1]'`. Alternativelly, we can use key ranges: `--couchbase-view-keys '["20140401",((0-1))]`.
 By default, one Hadoop map task will query Couchbase for view key `["20140401",0]` and another one for view key `["20140401",1]`.
 
 The import tool uses `TextOutputFormat` and will emit Couchbase document IDs as Hadoop keys and Couchbase JSON documents as Hadoop values. 
@@ -208,15 +208,15 @@ To __update__ existing Couchbase documents from your Hadoop job, you can extend 
 
 ### Arguments and Properties ###
 
-Various components of the Couchdoop library rely on having certain properties configured within the Hadoop Configuration object.
-This is why all the command line argument options available for import and export tools have a corresponding Hadoop Configuration property. 
+Various components of the Couchdoop library rely on having certain properties configured within the Hadoop `Configuration` object.
+This is why all command line argument options available for import and export tools have a corresponding Hadoop Configuration property. 
 For example, `--couchbase-view-keys` corresponds to the `couchbase.view.keys` Hadoop property. 
 Just remove the two dashes from the beginning of the long option names and replace the rest of the dashes with dots.
 
 For example, if you are using Couchdoop in your Hadoop job to read data from Couchbase, you'll have to set the `couchbase.bucket`
 Hadoop property (along with the other properties required for the import) in order to have the `CouchbaseViewInputFormat` work correctly.
 
-While you can take care of setting these properties yourself, you can also choose to have your Hadoop job uses the same options as 
+While you can take care of setting these properties yourself, you can also choose to have your Hadoop job use the same options as 
 Couchdoop's import or export tool to keep things simple.
  
 To load all the properties needed for import from the command line arguments (`String[] args`)
@@ -242,9 +242,9 @@ The same idea applies to `ExportArgs`.
 
 ### Couchbase as Hadoop InputFormat ###
 
-Couchbase views can be used as Hadoop `InputFormat` by using [`CouchbaseViewInputFormat`](/src/main/java/com/avira/couchdoop/imp/CouchbaseViewInputFormat.java). Check [`CouchbaseViewImporter`](/src/main/java/com/avira/couchdoop/imp/CouchbaseViewImporter.java) class as an example of how to configure a job with `CouchbaseViewInputFormat`.
+Couchbase views can be used as Hadoop `InputFormat` by using [`CouchbaseViewInputFormat`](/src/main/java/com/avira/couchdoop/imp/CouchbaseViewInputFormat.java). Check [`CouchbaseViewImporter`](/src/main/java/com/avira/couchdoop/jobs/CouchbaseViewImporter.java) class as an example of how to configure a job with `CouchbaseViewInputFormat`.
 
-`CouchbaseViewInputFormat` contains the static method helper `initJob` which configures database and view connection and sets the `InputFormat`.
+If you don't want to use `ArgsHelper`, `CouchbaseViewInputFormat` contains the static method helper `initJob` which configures database and view connection and sets the `InputFormat`.
 
 The following Mapper maps Couchbase key-values to Hadoop key-values.
 
@@ -264,7 +264,7 @@ The Mapper input keys are Couchbase document IDs and the input values are Couchb
 
 ### Couchbase as Hadoop OutputFormat ###
 
-You can write documents to Couchbase by using [`CouchbaseOutputFormat`](/src/main/java/com/avira/couchdoop/exp/CouchbaseOutputFormat.java). Check [`CouchbaseExporter`](/src/main/java/com/avira/couchdoop/exp/CouchbaseExporter.java) class as an example of how to configure a job with `CouchbaseOutputFormat`.
+You can write documents to Couchbase by using [`CouchbaseOutputFormat`](/src/main/java/com/avira/couchdoop/exp/CouchbaseOutputFormat.java). Check [`CouchbaseExporter`](/src/main/java/com/avira/couchdoop/jobs/CouchbaseExporter.java) class as an example of how to configure a job with `CouchbaseOutputFormat`.
 
 `CouchbaseOutputFormat` contains the static method helper `initJob` which configures database connection, sets the `InputFormat` and set the job output key and output value types required by `CouchbaseOutputFormat`.
 
