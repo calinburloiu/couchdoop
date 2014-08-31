@@ -12,13 +12,6 @@ public class ArgsHelper {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(ArgsHelper.class);
 
-  public static void addOption(Options options, Args.ArgDef arg, boolean hasArg,
-                                  boolean isRequired, String description) {
-    Option option = new Option(arg.getShortName() + "", arg.getLongName(), hasArg, description);
-    option.setRequired(isRequired);
-    options.addOption(option);
-  }
-
   public static Option getOptionFromArg(Args.ArgDef arg) {
     Option option = new Option(arg.getShortName() + "", arg.getLongName(), arg.hasArg, arg.description);
     option.setRequired(arg.isRequired);
@@ -30,13 +23,6 @@ public class ArgsHelper {
 
     if (argValue != null) {
       hadoopConf.set(arg.getPropertyName(), argValue);
-    }
-  }
-
-  public static void loadCliArgsIntoHadoopConf(CommandLine cl, Configuration hadoopConf,
-                                               List<Args.ArgDef> argsList) {
-    for (Args.ArgDef arg : argsList) {
-      setPropertyFromCliArg(hadoopConf, cl, arg);
     }
   }
 
