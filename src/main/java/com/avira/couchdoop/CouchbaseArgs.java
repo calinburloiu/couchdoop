@@ -37,16 +37,16 @@ public class CouchbaseArgs extends Args {
 
   private List<URI> urls;
   private String bucket;
-  private String password;
+  private String password = "";
 
   public static final ArgDef ARG_COUCHBASE_URLS = new ArgDef('h', "couchbase.urls", true, true,
       "(required) comma separated URL list of one or more Couchbase nodes from the cluster");
   public static final ArgDef ARG_COUCHBASE_BUCKET = new ArgDef('b', "couchbase.bucket", true, true,
       "(required) bucket name in the cluster you wish to use");
-  public static final ArgDef ARG_COUCHBASE_PASSWORD = new ArgDef('p', "couchbase.password", true, true,
+  public static final ArgDef ARG_COUCHBASE_PASSWORD = new ArgDef('p', "couchbase.password", true, false,
       "(required) password for the bucket");
 
-  public static final List<ArgDef> ARGS_LIST = new ArrayList<ArgDef>(3);
+  public static final List<ArgDef> ARGS_LIST = new ArrayList<>(3);
   static {
     ARGS_LIST.add(ARG_COUCHBASE_URLS);
     ARGS_LIST.add(ARG_COUCHBASE_BUCKET);
@@ -61,7 +61,7 @@ public class CouchbaseArgs extends Args {
   public void loadFromHadoopConfiguration(Configuration conf) throws ArgsException {
     String rawUrls = conf.get(ARG_COUCHBASE_URLS.getPropertyName());
     if (rawUrls != null) {
-      urls = new ArrayList<URI>();
+      urls = new ArrayList<>();
       String[] urlStrings = StringUtils.split(conf.get(ARG_COUCHBASE_URLS.getPropertyName()));
       for (String urlString: urlStrings) {
         urls.add(URI.create(urlString));
@@ -69,7 +69,7 @@ public class CouchbaseArgs extends Args {
     }
 
     bucket = conf.get(ARG_COUCHBASE_BUCKET.getPropertyName());
-    password = conf.get(ARG_COUCHBASE_PASSWORD.getPropertyName());
+    password = conf.get(ARG_COUCHBASE_PASSWORD.getPropertyName(), "");
   }
 
   @Override
