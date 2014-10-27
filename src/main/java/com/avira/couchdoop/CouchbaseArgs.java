@@ -37,7 +37,7 @@ public class CouchbaseArgs extends Args {
 
   private List<URI> urls;
   private String bucket;
-  private String password = "";
+  private String password;
 
   public static final ArgDef ARG_COUCHBASE_URLS = new ArgDef('h', "couchbase.urls", true, true,
       "(required) comma separated URL list of one or more Couchbase nodes from the cluster");
