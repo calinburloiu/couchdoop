@@ -45,7 +45,7 @@ public class ImportViewArgs extends CouchbaseArgs {
 
   private int numMappers;
 
-  public static final ArgDef ARG_DESIGNDOC_NAME = new ArgDef('d', "couchbase.designDoc.name", true, true,
+  public static final ArgDef ARG_DESIGNDOC_NAME = new ArgDef('d', "couchbase.designdoc.name", true, true,
     "(required) name of the design document");
   public static final ArgDef ARG_VIEW_NAME = new ArgDef('v', "couchbase.view.name", true, true,
     "(required) name of the view");
