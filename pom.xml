@@ -12,7 +12,7 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <couchbase.client.version>1.4.2</couchbase.client.version>
+    <couchbase.client.version>1.4.7</couchbase.client.version>
     <hadoop.version>2.3.0-cdh5.0.2</hadoop.version>
     <hbase.version>0.96.1.1-cdh5.0.2</hbase.version>
     <junit.version>4.11</junit.version>

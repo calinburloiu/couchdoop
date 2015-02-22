@@ -19,10 +19,12 @@
 
 package com.avira.couchdoop.exp;
 
+import java.io.Serializable;
+
 /**
  * Operation type which can be performed by Couchbase.
  */
-public enum CouchbaseOperation {
+public enum CouchbaseOperation implements Serializable {
   SET,
   ADD,
   REPLACE,
