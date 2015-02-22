@@ -23,7 +23,6 @@ import com.avira.couchdoop.jobs.CouchbaseExporter;
 import com.avira.couchdoop.jobs.CouchbaseViewImporter;
 import com.avira.couchdoop.jobs.CouchbaseViewSerialImporter;
 import com.avira.couchdoop.jobs.CouchbaseViewToHBaseImporter;
-import com.avira.couchdoop.update.BenchmarkUpdater;
 
 import java.util.Arrays;
 
@@ -64,10 +63,6 @@ public class CouchdoopTool {
         case "export":
           CouchbaseExporter exporter = new CouchbaseExporter();
           exporter.start(tailArgs);
-          break;
-        case "update":
-          BenchmarkUpdater updater = new BenchmarkUpdater();
-          updater.start(tailArgs);
           break;
         default:
           printUsage();

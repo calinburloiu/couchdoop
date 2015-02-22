@@ -19,12 +19,14 @@
 
 package com.avira.couchdoop.exp;
 
+import java.io.Serializable;
+
 /**
  * This class should be used as a Hadoop value to represent a Couchbase operation, a key and a document to be stored. The
  * available operations are SET, ADD, REPLACE, APPEND, PREPEND and DELETE. For the DELETE operation the document is
  * ignored.
  */
-public class CouchbaseAction {
+public class CouchbaseAction implements Serializable {
 
   private CouchbaseOperation operation;
   private Object value;
@@ -101,8 +103,8 @@ public class CouchbaseAction {
   @Override
   public String toString() {
     return "CouchbaseAction{" +
-      "operation=" + operation +
-      ", value=" + value +
-      '}';
+        "operation=" + operation +
+        ", value=" + value +
+        '}';
   }
 }
