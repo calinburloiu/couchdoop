@@ -242,6 +242,10 @@ Couchbase as __input__ or __output__ for your data.  To __update__ existing
 Couchbase documents from your Hadoop job, you can extend
 `CouchbaseUpdateMapper`.
 
+Couchdoop uses [Semantic Versioning](http://semver.org/) so if your project
+depends on _couchdoop_ library minor and patch releases will not break
+compatibility.
+
 ### Arguments and Properties ###
 
 Various components of the Couchdoop library rely on having certain properties
