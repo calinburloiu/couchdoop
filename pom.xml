@@ -1,22 +1,59 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>com.avira.couchdoop</groupId>
   <artifactId>couchdoop</artifactId>
-  <version>1.7.0</version>
+  <version>1.9.0-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <name>couchdoop</name>
-  <url>http://www.avira.com/</url>
+  <description>This project provides a tool and a library for connecting Couchbase with Hadoop for
+    the purpose of
+    importing and exporting data.
+  </description>
+  <inceptionYear>2014</inceptionYear>
+  <url>https://github.com/Avira/couchdoop</url>
+
+  <organization>
+    <name>Avira Operations GmbH</name>
+    <url>http://www.avira.com/</url>
+  </organization>
+
+  <licenses>
+    <license>
+      <name>Apache License, Version 2.0</name>
+      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+    </license>
+  </licenses>
+
+  <issueManagement>
+    <system>GitHub Issues</system>
+    <url>https://github.com/Avira/couchdoop/issues</url>
+  </issueManagement>
+
+  <scm>
+    <url>https://github.com/Avira/couchdoop</url>
+    <connection>scm:git:git://github.com/Avira/couchdoop.git</connection>
+    <developerConnection>scm:git:git@github.com:Avira/couchdoop.git</developerConnection>
+  </scm>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <couchbase.client.version>1.4.2</couchbase.client.version>
-    <hadoop.version>2.3.0-cdh5.0.2</hadoop.version>
-    <hbase.version>0.96.1.1-cdh5.0.2</hbase.version>
-    <junit.version>4.11</junit.version>
-    <slf4j.version>1.7.6</slf4j.version>
+
+    <java.version>1.7</java.version>
+    <scala.base.version>2.10</scala.base.version>
+    <scala.version>${scala.base.version}.4</scala.version>
+    <cdh.version>-cdh5.3.0</cdh.version>
+
+    <couchbase.client.version>1.4.8</couchbase.client.version>
+    <hadoop.version>2.5.0${cdh.version}</hadoop.version>
+    <hbase.version>0.98.6${cdh.version}</hbase.version>
+    <spark.version>1.2.0${cdh.version}</spark.version>
+
+    <junit.version>4.12</junit.version>
+    <slf4j.version>1.7.10</slf4j.version>
   </properties>
 
   <dependencies>
@@ -25,7 +62,7 @@
       <artifactId>couchbase-client</artifactId>
       <version>${couchbase.client.version}</version>
     </dependency>
-    
+
     <dependency>
       <groupId>org.apache.hadoop</groupId>
       <artifactId>hadoop-client</artifactId>
@@ -44,23 +81,11 @@
       <version>${hbase.version}</version>
       <scope>provided</scope>
     </dependency>
-
     <dependency>
-      <groupId>com.typesafe.play</groupId>
-      <artifactId>play-json_2.10</artifactId>
-      <version>2.2.1</version>
-    </dependency>
-
-    <!-- Utilities -->
-    <dependency>
-      <groupId>org.apache.commons</groupId>
-      <artifactId>commons-lang3</artifactId>
-      <version>3.2.1</version>
-    </dependency>
-    <dependency>
-      <groupId>commons-cli</groupId>
-      <artifactId>commons-cli</artifactId>
-      <version>1.2</version>
+      <groupId>org.apache.spark</groupId>
+      <artifactId>spark-core_${scala.base.version}</artifactId>
+      <version>${spark.version}</version>
+      <scope>provided</scope>
     </dependency>
 
     <!-- Testing -->
@@ -70,26 +95,13 @@
       <version>${junit.version}</version>
       <scope>test</scope>
     </dependency>
-    <dependency>
-      <groupId>org.apache.hadoop</groupId>
-      <artifactId>hadoop-minicluster</artifactId>
-      <version>${hadoop.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.mrunit</groupId>
-      <artifactId>mrunit</artifactId>
-      <version>1.0.0</version>
-      <classifier>hadoop2</classifier>
-      <scope>test</scope>
-    </dependency>
 
     <!-- Logging -->
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
       <version>${slf4j.version}</version>
-        <scope>provided</scope>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>
@@ -97,24 +109,23 @@
       <version>${slf4j.version}</version>
       <scope>provided</scope>
     </dependency>
-    
-    <!-- Support for Scala -->
+
+    <!-- Scala -->
     <dependency>
       <groupId>org.scala-lang</groupId>
       <artifactId>scala-library</artifactId>
-      <version>2.10.4</version>
+      <version>${scala.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.scala-lang</groupId>
+      <artifactId>scala-compiler</artifactId>
+      <version>${scala.version}</version>
       <scope>provided</scope>
     </dependency>
   </dependencies>
-  
+
   <repositories>
-    <!--<repository>
-      <id>bdo</id>
-      <url>http://hadoop-mgmt-01.tt.avira.com:8081/artifactory/repo/</url>
-      <snapshots>
-        <updatePolicy>always</updatePolicy>
-      </snapshots>
-    </repository>-->
     <repository>
       <id>cloudera</id>
       <url>https://repository.cloudera.com/content/groups/public/</url>
@@ -126,27 +137,60 @@
   </repositories>
 
   <distributionManagement>
-    <!--<repository>
-      <id>bdo</id>
-      <name>Avira BDO Repository Manager</name>
-      <url>http://hadoop-mgmt-01.tt.avira.com:8081/artifactory/libs-release-local</url>
-    </repository>-->
+    <!-- TODO Publish to Maven Central -->
   </distributionManagement>
-  
+
   <build>
     <plugins>
       <plugin>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.1</version>
+        <groupId>net.alchim31.maven</groupId>
+        <artifactId>scala-maven-plugin</artifactId>
+        <version>3.2.0</version>
+
         <configuration>
-          <source>1.7</source>
-          <target>1.7</target>
+          <recompileMode>incremental</recompileMode>
+          <useZincServer>true</useZincServer>
         </configuration>
+
+        <executions>
+          <execution>
+            <id>scala-compile-first</id>
+            <phase>process-resources</phase>
+            <goals>
+              <goal>compile</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>scala-test-compile-first</id>
+            <phase>process-test-resources</phase>
+            <goals>
+              <goal>testCompile</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
       <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.2</version>
+
+        <configuration>
+          <source>${java.version}</source>
+          <target>${java.version}</target>
+        </configuration>
+
+        <executions>
+          <execution>
+            <phase>compile</phase>
+            <goals>
+              <goal>compile</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <!--<plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-assembly-plugin</artifactId>
-        <version>2.4</version>
+        <version>2.5.3</version>
         <configuration>
           <descriptor>src/main/assembly/hadoop-job.xml</descriptor>
           <archive>
@@ -164,28 +208,44 @@
             </goals>
           </execution>
         </executions>
-      </plugin>
-      
-      <!-- Scala support -->
+      </plugin>-->
       <plugin>
-        <groupId>net.alchim31.maven</groupId>
-        <artifactId>scala-maven-plugin</artifactId>
-        <version>3.1.6</version>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-shade-plugin</artifactId>
+        <version>2.3</version>
         <executions>
           <execution>
-            <id>scala-compile-first</id>
-            <phase>process-resources</phase>
+            <phase>package</phase>
             <goals>
-              <goal>add-source</goal>
-              <goal>compile</goal>
+              <goal>shade</goal>
             </goals>
-          </execution>
-          <execution>
-            <id>scala-com.avira.couchdoop.test-compile</id>
-            <phase>process-test-resources</phase>
-            <goals>
-              <goal>testCompile</goal>
-            </goals>
+            <configuration>
+              <minimizeJar>true</minimizeJar>
+              <createDependencyReducedPom>true</createDependencyReducedPom>
+              <relocations>
+                <relocation>
+                  <pattern>org.apache.http</pattern>
+                  <shadedPattern>shaded.org.apache.http</shadedPattern>
+                </relocation>
+              </relocations>
+              <filters>
+                <filter>
+                  <artifact>*:*</artifact>
+                  <excludes>
+                    <exclude>META-INF/*.SF</exclude>
+                    <exclude>META-INF/*.DSA</exclude>
+                    <exclude>META-INF/*.RSA</exclude>
+                  </excludes>
+                </filter>
+              </filters>
+              <transformers>
+                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                  <manifestEntries>
+                    <Main-Class>com.avira.couchdoop.CouchdoopTool</Main-Class>
+                  </manifestEntries>
+                </transformer>
+              </transformers>
+            </configuration>
           </execution>
         </executions>
       </plugin>

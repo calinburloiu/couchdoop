@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -16,24 +16,23 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+package com.avira.couchdoop.spark
 
-package com.avira.couchdoop.exp;
+import com.avira.couchdoop.exp.CouchbaseAction
+import org.apache.spark.rdd.RDD
 
-import java.io.Serializable;
+import scala.language.implicitConversions
 
 /**
- * Operation type which can be performed by Couchbase.
+ * Utility implicit methods for use in Spark to provide integration with Couchbase.
  */
-public enum CouchbaseOperation implements Serializable {
-  SET,
-  ADD,
-  REPLACE,
-  APPEND,
-  PREPEND,
+object CouchdoopSpark {
 
-  DELETE,
-
-  EXISTS,
-
-  NONE
+  /**
+   * Implicit function used to provide `saveToCouchbase` methods to RDDs of of `(String, com.avira.couchdoop.exp.CouchbaseAction)`
+   * pairs.
+   */
+  implicit def rddToCouchdoopRDDFunctions(rdd: RDD[(String, CouchbaseAction)]): CouchdoopRDDFunctions = {
+    new CouchdoopRDDFunctions(rdd)
+  }
 }
