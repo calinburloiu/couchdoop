@@ -44,12 +44,12 @@ directory:
 mvn package
 ```
 
-The file `target/couchdoop-${VERSION}-job.jar` will be created (replace
+The file `target/couchdoop-${VERSION}.jar` will be created (replace
 `${VERSION}` with the actual version).  If you run the tool without arguments
 you get a usage with the tools available:
 
 ```
-hadoop jar target/couchdoop-${VERSION}-job.jar
+hadoop jar target/couchdoop-${VERSION}.jar
 ```
 
 Pass only the tool name as the first argument and the usage for that tool is
@@ -62,7 +62,7 @@ Couchdoop is able to import data from Couchbase by using a view into HDFS
 files. The following line prints the usage for the tool:
 
 ```
-hadoop jar target/couchdoop-${VERSION}-job.jar import
+hadoop jar target/couchdoop-${VERSION}.jar import
 ```
 
 Add options as explained in the below table to perform an import:
@@ -86,7 +86,7 @@ documentation for more details about views. The output is written in HDFS in
 file "/user/johnny/clicks".
 
 ```bash
-hadoop jar target/couchdoop-${VERSION}-job.jar import \
+hadoop jar target/couchdoop-${VERSION}.jar import \
     --couchbase-urls http://couchbase.example.com:8091/pools \
     --couchbase-bucket my_bucket \
     --couchbase-designdoc-name tracking \
@@ -192,7 +192,7 @@ Couchdoop _export_ tool is able to export a key-value CSV file form HDFS into
 Couchbase. The following command displays the usage for this tool:
 
 ```bash
-hadoop jar target/couchdoop-${VERSION}-job.jar export
+hadoop jar target/couchdoop-${VERSION}.jar export
 ```
 
 Add options as shown in the following table to perform the export.
@@ -211,7 +211,7 @@ The following example shows how to export CSV file "documents.csv" from HDFS to
 Couchbase bucket "my_bucket".
 
 ```bash
-hadoop jar couchdoop-1.3.0-SNAPSHOT-job.jar export \
+hadoop jar couchdoop-1.3.0-SNAPSHOT.jar export \
     -h http://avira5:8091/pools \
     -b AV_Lists -p 'secret' \
     -i /user/johnny/documents.csv \
