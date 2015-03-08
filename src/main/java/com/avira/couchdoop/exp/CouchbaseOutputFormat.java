@@ -165,11 +165,6 @@ public class CouchbaseOutputFormat extends OutputFormat<String, CouchbaseAction>
     job.setOutputKeyClass(String.class);
     job.setOutputValueClass(CouchbaseAction.class);
 
-    // User classpath takes precedence in favor of Hadoop classpath.
-    // This is because the Couchbase client requires a newer version of
-    // org.apache.httpcomponents:httpcore.
-    job.setUserClassesTakesPrecedence(true);
-
     Configuration conf = job.getConfiguration();
     conf.set(CouchbaseArgs.ARG_COUCHBASE_URLS.getPropertyName(), urls);
     conf.set(CouchbaseArgs.ARG_COUCHBASE_BUCKET.getPropertyName(), bucket);

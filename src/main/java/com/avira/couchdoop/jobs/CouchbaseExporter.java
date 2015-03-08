@@ -84,11 +84,6 @@ public class CouchbaseExporter extends Configured implements Tool {
     Job job = Job.getInstance(conf);
     job.setJarByClass(CouchbaseExporter.class);
 
-    // User classpath takes precedence in favor of Hadoop classpath.
-    // This is because the Couchbase client requires a newer version of
-    // org.apache.httpcomponents:httpcore.
-    job.setUserClassesTakesPrecedence(true);
-
     // Input
     FileInputFormat.setInputPaths(job, input);
 
