@@ -406,6 +406,21 @@ cbOutput.saveToCouchbase
 For an example project check out [couchdoop-spark-demo GitHub
 project](https://github.com/Avira/couchdoop-spark-demo).
 
+Building Couchdoop
+------------------
+
+In order to build the project after you clone it simply run:
+
+```
+mvn clean install
+```
+
+If you need to build for CDH from Cloudera run:
+
+```
+mvn clean install -Pcdh
+```
+
 Dependency issues
 -----------------
 
