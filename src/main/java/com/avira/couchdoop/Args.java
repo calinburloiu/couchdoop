@@ -34,6 +34,10 @@ public abstract class Args {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(Args.class);
 
+  /**
+   * Instances of this class describe a command line argument with its short and long name which has a Java property
+   * name attached.
+   */
   public static class ArgDef {
     char shortName;
     String propertyName;
