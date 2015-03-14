@@ -23,7 +23,7 @@ connector](http://www.couchbase.com/couchbase-server/connectors/hadoop) which
 is only able to import a full bucket or to stream documents for a configurable
 amount of time.
 
-Since 1.8.0 Couchdoop has idiomatic intergration with Spark. However, this
+Since 1.8.0 Couchdoop has idiomatic integration with Spark. However, this
 version only supports exporting from Hadoop storage to Couchbase. Scala
 sources were compiled for Scala 2.10.
 
@@ -405,6 +405,21 @@ cbOutput.saveToCouchbase
 
 For an example project check out [couchdoop-spark-demo GitHub
 project](https://github.com/Avira/couchdoop-spark-demo).
+
+Building Couchdoop
+------------------
+
+In order to build the project after you clone it simply run:
+
+```
+mvn clean install
+```
+
+If you need to build for CDH from Cloudera run:
+
+```
+mvn clean install -Pcdh
+```
 
 Dependency issues
 -----------------
