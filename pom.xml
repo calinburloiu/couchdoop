@@ -8,7 +8,7 @@
   <version>1.9.0-SNAPSHOT</version>
   <packaging>jar</packaging>
 
-  <name>couchdoop</name>
+  <name>${project.groupId}:${project.artifactId}</name>
   <description>This project provides a tool and a library for connecting Couchbase with Hadoop for
     the purpose of
     importing and exporting data.
@@ -27,6 +27,33 @@
       <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
     </license>
   </licenses>
+
+  <developers>
+    <developer>
+      <name>Călin-Andrei Burloiu</name>
+      <email>calin.burloiu@gmail.com</email>
+      <organization>Avira Operations GmbH &amp; Co. KG</organization>
+      <organizationUrl>http://www.avira.com</organizationUrl>
+      <url>https://github.com/calinburloiu</url>
+      <roles>
+        <role>Project Lead</role>
+      </roles>
+    </developer>
+    <developer>
+      <name>Radu Pastia</name>
+      <email>radu@pastia.ro</email>
+      <organization>Orange S.A.</organization>
+      <organizationUrl>http://www.orange.com</organizationUrl>
+      <url>https://github.com/rpastia</url>
+    </developer>
+    <developer>
+      <name>Viacheslav Rodionov</name>
+      <email>bepcyc@gmail.com</email>
+      <organization>Avira Operations GmbH &amp; Co. KG</organization>
+      <organizationUrl>http://www.avira.com</organizationUrl>
+      <url>https://github.com/bepcyc</url>
+    </developer>
+  </developers>
 
   <issueManagement>
     <system>GitHub Issues</system>
@@ -145,11 +172,33 @@
   </dependencies>
 
   <distributionManagement>
-    <!-- TODO Publish to Maven Central -->
+    <snapshotRepository>
+      <id>ossrh</id>
+      <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+    </snapshotRepository>
   </distributionManagement>
 
   <build>
     <plugins>
+      <!-- Compiling -->
+      <plugin>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.2</version>
+
+        <configuration>
+          <source>${java.version}</source>
+          <target>${java.version}</target>
+        </configuration>
+
+        <executions>
+          <execution>
+            <phase>compile</phase>
+            <goals>
+              <goal>compile</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
       <plugin>
         <groupId>net.alchim31.maven</groupId>
         <artifactId>scala-maven-plugin</artifactId>
@@ -175,26 +224,16 @@
               <goal>testCompile</goal>
             </goals>
           </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.2</version>
-
-        <configuration>
-          <source>${java.version}</source>
-          <target>${java.version}</target>
-        </configuration>
-
-        <executions>
           <execution>
-            <phase>compile</phase>
+            <id>attach-javadocs</id>
             <goals>
-              <goal>compile</goal>
+              <goal>doc-jar</goal>
             </goals>
           </execution>
         </executions>
       </plugin>
+
+      <!-- Shading / assembling -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-shade-plugin</artifactId>
@@ -234,6 +273,87 @@
             </configuration>
           </execution>
         </executions>
+      </plugin>
+
+      <!-- Sources and documentation -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-source-plugin</artifactId>
+        <version>2.4</version>
+        <executions>
+          <execution>
+            <id>attach-sources</id>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <version>2.10.1</version>
+        <executions>
+          <execution>
+            <id>attach-javadocs</id>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-site-plugin</artifactId>
+        <version>3.4</version>
+        <configuration>
+          <reportPlugins>
+            <plugin>
+              <artifactId>maven-project-info-reports-plugin</artifactId>
+              <version>2.8</version>
+            </plugin>
+            <plugin>
+              <groupId>net.alchim31.maven</groupId>
+              <artifactId>scala-maven-plugin</artifactId>
+              <version>3.2.0</version>
+              <configuration>
+                <jvmArgs>
+                  <jvmArg>-Xms64m</jvmArg>
+                  <jvmArg>-Xmx1024m</jvmArg>
+                </jvmArgs>
+              </configuration>
+            </plugin>
+          </reportPlugins>
+        </configuration>
+      </plugin>
+
+      <!-- Signing -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-gpg-plugin</artifactId>
+        <version>1.6</version>
+        <executions>
+          <execution>
+            <id>sign-artifacts</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>sign</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+      <!-- Deployment to Sonatype -->
+      <plugin>
+        <groupId>org.sonatype.plugins</groupId>
+        <artifactId>nexus-staging-maven-plugin</artifactId>
+        <version>1.6.5</version>
+        <extensions>true</extensions>
+        <configuration>
+          <serverId>ossrh</serverId>
+          <nexusUrl>https://oss.sonatype.org/</nexusUrl>
+          <autoReleaseAfterClose>true</autoReleaseAfterClose>
+        </configuration>
       </plugin>
     </plugins>
   </build>
