@@ -33,6 +33,8 @@ public enum CouchbaseOperation implements Serializable {
 
   DELETE,
 
+  TOUCH,
+  @Deprecated
   EXISTS,
 
   NONE

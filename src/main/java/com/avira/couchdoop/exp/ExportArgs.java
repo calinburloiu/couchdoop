@@ -45,7 +45,7 @@ public class ExportArgs extends CouchbaseArgs {
   public static final ArgDef ARG_INPUT = new ArgDef('i', "input", true, true,
       "(required) HDFS input directory");
   public static final ArgDef ARG_OPERATION = new ArgDef('t', "couchbase.operation", true, false,
-      "one of Couchbase store operations: SET, ADD, REPLACE, APPEND, PREPEND, DELETE, EXISTS; defaults to SET");
+      "one of Couchbase store operations: SET, ADD, REPLACE, APPEND, PREPEND, DELETE, TOUCH; defaults to SET");
   public static final ArgDef ARG_EXPIRY = new ArgDef('x', "couchbase.expiry", true, false,
       "Couchbase document expiry value; defaults to 0 (doesn't expire)");
   public static final ArgDef ARG_DELIMITER_FIELDS = new ArgDef('d', "delimiter.fields", true, false,

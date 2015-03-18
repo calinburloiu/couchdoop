@@ -81,6 +81,8 @@ public class CouchbaseOutputFormat extends OutputFormat<String, CouchbaseAction>
           return couchbaseClient.prepend(key, value);
         case DELETE:
           return couchbaseClient.delete(key);
+        case TOUCH:
+          return couchbaseClient.touch(key, expiry);
         case EXISTS:
           return couchbaseClient.touch(key, expiry);
         default:
@@ -109,7 +111,7 @@ public class CouchbaseOutputFormat extends OutputFormat<String, CouchbaseAction>
         } catch (ExecutionException e) {
           throw new RuntimeException(e);
         }
-        if (!res && value.getOperation().equals(CouchbaseOperation.EXISTS)) {
+        if (!res && value.getOperation().equals(CouchbaseOperation.TOUCH)) {
           nonExistentTouchedKeys++;
         }
 

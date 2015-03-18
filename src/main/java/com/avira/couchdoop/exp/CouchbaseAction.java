@@ -72,8 +72,16 @@ public class CouchbaseAction implements Serializable {
     return new CouchbaseAction(CouchbaseOperation.NONE, null);
   }
 
+  /**
+   * @deprecated Use {@link com.avira.couchdoop.exp.CouchbaseAction#createTouchAction()}
+   */
+  @Deprecated
   public static CouchbaseAction createExistsAction() {
-    return new CouchbaseAction(CouchbaseOperation.EXISTS, null);
+    return new CouchbaseAction(CouchbaseOperation.TOUCH, null);
+  }
+
+  public static CouchbaseAction createTouchAction() {
+    return new CouchbaseAction(CouchbaseOperation.TOUCH, null);
   }
 
   public CouchbaseOperation getOperation() {
