@@ -95,7 +95,6 @@ public class CouchbaseOutputFormat extends OutputFormat<String, CouchbaseAction>
     public void write(String key, CouchbaseAction value) throws IOException, InterruptedException {
       int backoffExp = 0;
       OperationFuture<Boolean> future;
-      OperationStatus status;
 
       // Store in Couchbase by doing exponential back-off.
       do {
