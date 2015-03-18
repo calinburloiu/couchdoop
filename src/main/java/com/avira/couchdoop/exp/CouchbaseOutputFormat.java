@@ -107,8 +107,8 @@ public class CouchbaseOutputFormat extends OutputFormat<String, CouchbaseAction>
         boolean res;
         try {
           res = future.get();
-        } catch (ExecutionException e) {
-          throw new RuntimeException(e);
+        } catch (Exception e) {
+          throw new RuntimeException(value.toString() + "; " + e.getMessage(), e);
         }
         if (!res && value.getOperation().equals(CouchbaseOperation.TOUCH)) {
           nonExistentTouchedKeys++;

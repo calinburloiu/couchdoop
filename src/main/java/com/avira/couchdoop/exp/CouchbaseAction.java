@@ -113,6 +113,7 @@ public class CouchbaseAction implements Serializable {
     return "CouchbaseAction{" +
         "operation=" + operation +
         ", value=" + value +
+        ", expiry=" + expiry +
         '}';
   }
 }
