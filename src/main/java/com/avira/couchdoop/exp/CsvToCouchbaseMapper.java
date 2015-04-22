@@ -25,6 +25,8 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Mapper;
 
 import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * This mapper maps key-value pairs read from TSV files as documents in Couchbase by using keys as IDs and values as
@@ -35,6 +37,11 @@ public class CsvToCouchbaseMapper extends Mapper<LongWritable, Text, String, Cou
   private CouchbaseOperation operation;
   private int expiry;
   private String fieldsDelimiter;
+
+  private static final Set<CouchbaseOperation> UNARY_OPERATIONS = new HashSet<CouchbaseOperation>(){{
+    add(CouchbaseOperation.DELETE);
+    add(CouchbaseOperation.TOUCH);
+  }};
 
   private static final String COUNTER_ERRORS = "ERRORS";
 
@@ -55,28 +62,21 @@ public class CsvToCouchbaseMapper extends Mapper<LongWritable, Text, String, Cou
 
   @Override
   protected void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
+    Object doc;
     String docId;
     CouchbaseAction action;
     String[] pair = value.toString().split(fieldsDelimiter);
 
-    if (operation.equals(CouchbaseOperation.DELETE)) {
-      if (pair.length <= 1) {
-        context.getCounter(Error.LINES_WITH_WRONG_COLUMNS_COUNT).increment(1);
-        return;
-      }
-
-      docId = pair[0];
-      action = CouchbaseAction.createDeleteAction();
-    } else {
-      // Skip error line.
-      if (pair.length != 2) {
-        context.getCounter(Error.LINES_WITH_WRONG_COLUMNS_COUNT).increment(1);
-        return;
-      }
-
-      docId = pair[0];
-      action = new CouchbaseAction(operation, pair[1], expiry);
+    // Validate number of columns against operation.
+    if (UNARY_OPERATIONS.contains(operation) && pair.length < 1 ||
+        !UNARY_OPERATIONS.contains(operation) && pair.length < 2) {
+      context.getCounter(Error.LINES_WITH_WRONG_COLUMNS_COUNT).increment(1);
+      return;
     }
+
+    docId = pair[0];
+    doc = (pair.length >= 2 ? pair[1] : null);
+    action = new CouchbaseAction(operation, doc, expiry);
 
     context.write(docId, action);
   }

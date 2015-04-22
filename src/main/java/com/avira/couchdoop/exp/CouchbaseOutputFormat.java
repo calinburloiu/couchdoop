@@ -81,6 +81,8 @@ public class CouchbaseOutputFormat extends OutputFormat<String, CouchbaseAction>
           return couchbaseClient.prepend(key, value);
         case DELETE:
           return couchbaseClient.delete(key);
+        case TOUCH:
+          return couchbaseClient.touch(key, expiry);
         case EXISTS:
           return couchbaseClient.touch(key, expiry);
         default:
@@ -93,7 +95,6 @@ public class CouchbaseOutputFormat extends OutputFormat<String, CouchbaseAction>
     public void write(String key, CouchbaseAction value) throws IOException, InterruptedException {
       int backoffExp = 0;
       OperationFuture<Boolean> future;
-      OperationStatus status;
 
       // Store in Couchbase by doing exponential back-off.
       do {
@@ -106,10 +107,10 @@ public class CouchbaseOutputFormat extends OutputFormat<String, CouchbaseAction>
         boolean res;
         try {
           res = future.get();
-        } catch (ExecutionException e) {
-          throw new RuntimeException(e);
+        } catch (Exception e) {
+          throw new RuntimeException(value.toString() + "; " + e.getMessage(), e);
         }
-        if (!res && value.getOperation().equals(CouchbaseOperation.EXISTS)) {
+        if (!res && value.getOperation().equals(CouchbaseOperation.TOUCH)) {
           nonExistentTouchedKeys++;
         }
 
