@@ -94,7 +94,6 @@
       </repositories>
       <properties>
         <cdh.version>cdh5.3.2</cdh.version>
-
         <hadoop.version>2.5.0-${cdh.version}</hadoop.version>
         <hbase.version>0.98.6-${cdh.version}</hbase.version>
         <spark.version>1.2.0-${cdh.version}</spark.version>
@@ -264,7 +263,8 @@
                 </filter>
               </filters>
               <transformers>
-                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                <transformer
+                    implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                   <manifestEntries>
                     <Main-Class>com.avira.couchdoop.CouchdoopTool</Main-Class>
                   </manifestEntries>
@@ -299,6 +299,9 @@
             <goals>
               <goal>jar</goal>
             </goals>
+            <configuration>
+              <additionalparam>-Xdoclint:none</additionalparam>
+            </configuration>
           </execution>
         </executions>
       </plugin>
