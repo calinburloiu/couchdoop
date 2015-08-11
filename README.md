@@ -213,7 +213,7 @@ Couchbase bucket "my_bucket".
 ```bash
 hadoop jar couchdoop-1.3.0-SNAPSHOT.jar export \
     -h http://avira5:8091/pools \
-    -b AV_Lists -p 'secret' \
+    -b my_bucket -p 'secret' \
     -i /user/johnny/documents.csv \
     -t ADD \
     -x 3600 -d ','
