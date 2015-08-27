@@ -22,6 +22,7 @@ package com.avira.couchdoop.exp;
 import com.avira.couchdoop.ArgsException;
 import com.avira.couchdoop.CouchbaseArgs;
 import com.couchbase.client.CouchbaseClient;
+import net.spy.memcached.internal.CheckedOperationTimeoutException;
 import net.spy.memcached.internal.OperationFuture;
 import net.spy.memcached.ops.OperationStatus;
 import org.apache.hadoop.conf.Configuration;
@@ -39,7 +40,8 @@ import java.util.concurrent.ExecutionException;
 /**
  * This output format writes writes each key-value received as a Couchbase document.
  *
- * <p>Keys received correspond to the Couchbase keys and values received to Couchbase documents.</p>
+ * <p>Keys received correspond to the Couchbase keys and values received to Couchbase
+ * documents.</p>
  */
 public class CouchbaseOutputFormat extends OutputFormat<String, CouchbaseAction> {
 
@@ -51,15 +53,16 @@ public class CouchbaseOutputFormat extends OutputFormat<String, CouchbaseAction>
 
     private long nonExistentTouchedKeys = 0;
     private long failedStoreOperations = 0;
+    private long timeoutOperations = 0;
     private long existentKeys = 0;
     private int[] expBackoffCounters;
 
     protected final static int EXP_BACKOFF_MAX_TRIES = 16;
     protected final static int EXP_BACKOFF_MAX_RETRY_INTERVAL = 1000; // ms
 
-    public CouchbaseRecordWriter(List<URI> urls, String bucket, String password) throws IOException {
-      LOGGER.info("Connecting to Couchbase bucket {} by using URLs {}...",
-          bucket, urls, password);
+    public CouchbaseRecordWriter(List<URI> urls, String bucket, String password)
+        throws IOException {
+      LOGGER.info("Connecting to Couchbase bucket {} by using URLs {}...", bucket, urls, password);
       couchbaseClient = new CouchbaseClient(urls, bucket, password);
       LOGGER.info("Connected to Couchbase.");
 
@@ -108,13 +111,16 @@ public class CouchbaseOutputFormat extends OutputFormat<String, CouchbaseAction>
         try {
           res = future.get();
         } catch (Exception e) {
-          throw new RuntimeException(value.toString() + "; " + e.getMessage(), e);
+          res = false;
+
+          if (e.getCause() instanceof CheckedOperationTimeoutException) {
+            timeoutOperations++;
+          }
         }
         if (!res && value.getOperation().equals(CouchbaseOperation.TOUCH)) {
           nonExistentTouchedKeys++;
         }
 
-        // TODO See if false also means error.
         if (!res) {
           failedStoreOperations++;
           if (future.getStatus().getMessage().contains("exists")) {
@@ -122,12 +128,14 @@ public class CouchbaseOutputFormat extends OutputFormat<String, CouchbaseAction>
           }
         }
 
-        if (future.getStatus().isSuccess() || !future.getStatus().getMessage().equals("Temporary failure") ||
-            backoffExp >= EXP_BACKOFF_MAX_TRIES) {
+        if (future.getStatus().isSuccess()
+            || !future.getStatus().getMessage().equals("Temporary failure")
+            || backoffExp >= EXP_BACKOFF_MAX_TRIES) {
           break;
         }
 
-        int retryInterval = Math.min((int) Math.pow(2, backoffExp), EXP_BACKOFF_MAX_RETRY_INTERVAL);
+        int retryInterval = Math.min((int) Math.pow(2, backoffExp),
+            EXP_BACKOFF_MAX_RETRY_INTERVAL);
         Thread.sleep(retryInterval);
         expBackoffCounters[backoffExp]++;
 
@@ -141,21 +149,29 @@ public class CouchbaseOutputFormat extends OutputFormat<String, CouchbaseAction>
       couchbaseClient.shutdown();
 
       if (failedStoreOperations > 0) {
-        context.getCounter(CouchbaseOutputFormat.class.getName(), "FAILED_STORE_OPERATIONS").increment(failedStoreOperations);
+        context.getCounter(CouchbaseOutputFormat.class.getName(), "FAILED_STORE_OPERATIONS")
+            .increment(failedStoreOperations);
+      }
+      if (timeoutOperations > 0) {
+        context.getCounter(CouchbaseOutputFormat.class.getName(), "TIMEOUT_OPERATIONS")
+            .increment(timeoutOperations);
       }
       if (existentKeys > 0) {
-        context.getCounter(CouchbaseOutputFormat.class.getName(), "EXISTANT_KEYS").increment(existentKeys);
+        context.getCounter(CouchbaseOutputFormat.class.getName(), "EXISTENT_KEYS")
+            .increment(existentKeys);
       }
 
       // Set counter for non existent touched keys if applicable.
       if (nonExistentTouchedKeys > 0) {
-        context.getCounter(CouchbaseOutputFormat.class.getName(), "NON_EXISTENT_TOUCHED_KEYS").increment(nonExistentTouchedKeys);
+        context.getCounter(CouchbaseOutputFormat.class.getName(), "NON_EXISTENT_TOUCHED_KEYS")
+            .increment(nonExistentTouchedKeys);
       }
       // Set counters for exponential back-off.
       for (int i = 0; i < expBackoffCounters.length; i++) {
         int expBackoffCounter = expBackoffCounters[i];
         if (expBackoffCounter > 0) {
-          context.getCounter(CouchbaseOutputFormat.class.getName(), "EXP_BACKOFF_COUNT_FOR_TRY_" + i).increment(expBackoffCounter);
+          context.getCounter(CouchbaseOutputFormat.class.getName(),
+              "EXP_BACKOFF_COUNT_FOR_TRY_" + i).increment(expBackoffCounter);
         }
       }
     }
@@ -172,7 +188,8 @@ public class CouchbaseOutputFormat extends OutputFormat<String, CouchbaseAction>
     conf.set(CouchbaseArgs.ARG_COUCHBASE_PASSWORD.getPropertyName(), password);
   }
 
-  public RecordWriter<String, CouchbaseAction> getRecordWriter(TaskAttemptContext context) throws IOException, InterruptedException {
+  public RecordWriter<String, CouchbaseAction> getRecordWriter(TaskAttemptContext context)
+      throws IOException, InterruptedException {
     ExportArgs args;
     try {
       args = new ExportArgs(context.getConfiguration());
@@ -188,7 +205,8 @@ public class CouchbaseOutputFormat extends OutputFormat<String, CouchbaseAction>
   public void checkOutputSpecs(JobContext context) throws IOException, InterruptedException {}
 
   @Override
-  public OutputCommitter getOutputCommitter(TaskAttemptContext context) throws IOException, InterruptedException {
+  public OutputCommitter getOutputCommitter(TaskAttemptContext context)
+      throws IOException, InterruptedException {
     return new FileOutputCommitter(FileOutputFormat.getOutputPath(context), context);
   }
 }
