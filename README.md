@@ -359,11 +359,11 @@ Advanced Configuration Parameters
 
 ### Exporting ###
 
-| Configuration Property                         | Description
-| ---------------------------------------------- | -----------
-| `couchdoop.expBackoff.maxTriesPerTask`         | How many times should failed operation be retried before ignoring the failure. If either this value or `couchdoop.expBackoff.maxRetryIntervalPerTask` is reached the failure is ignored.
-| `couchdoop.expBackoff.maxRetryIntervalPerTask` | Maximum number of milliseconds to wait until retrying a failed operation. If either this value or `couchdoop.expBackoff.maxTriesPerTask` is reached the failure is ignored.
-| `couchdoop.expBackoff.maxTotalTimeoutPerTask`  | Maximum total time in milliseconds for a task to wait until retrying failed operations. A task is failed if this value is reached.
+| Configuration Property                         | Default Value | Description
+| ---------------------------------------------- | ------------- | -----------
+| `couchdoop.expBackoff.maxTriesPerTask`         | 16            | How many times should failed operation be retried before ignoring the failure. If either this value or `couchdoop.expBackoff.maxRetryIntervalPerTask` is reached the failure is ignored.
+| `couchdoop.expBackoff.maxRetryIntervalPerTask` | 1000          | Maximum number of milliseconds to wait until retrying a failed operation. If either this value or `couchdoop.expBackoff.maxTriesPerTask` is reached the failure is ignored.
+| `couchdoop.expBackoff.maxTotalTimeoutPerTask`  | 60000         | Maximum total time in milliseconds for a task to wait until retrying failed operations. A task is failed if this value is reached.
 
 Running Couchdoop on Spark
 --------------------------
