@@ -22,8 +22,8 @@ package com.avira.couchdoop.exp;
 import com.avira.couchdoop.ArgsException;
 import com.avira.couchdoop.CouchbaseArgs;
 import com.couchbase.client.CouchbaseClient;
+import net.spy.memcached.internal.CheckedOperationTimeoutException;
 import net.spy.memcached.internal.OperationFuture;
-import net.spy.memcached.ops.OperationStatus;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.*;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputCommitter;
@@ -34,16 +34,45 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.net.URI;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 
 /**
  * This output format writes writes each key-value received as a Couchbase document.
  *
- * <p>Keys received correspond to the Couchbase keys and values received to Couchbase documents.</p>
+ * <p>Keys received correspond to the Couchbase keys and values received to Couchbase
+ * documents.</p>
  */
 public class CouchbaseOutputFormat extends OutputFormat<String, CouchbaseAction> {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(CouchbaseOutputFormat.class);
+
+  /**
+   * How many times should failed operation be retried before ignoring the failure.
+   *
+   * <p>If either this value or couchdoop.expBackoff.maxRetryIntervalPerTask is reached the failure
+   * is ignored.</p>
+   */
+  public final static String CONF_EXP_BACKOFF_MAX_TRIES_PER_TASK =
+      "couchdoop.expBackoff.maxTriesPerTask";
+  protected final static int EXP_BACKOFF_MAX_TRIES = 16;
+
+  /**
+   * Maximum number of milliseconds to wait until retrying a failed operation.
+   *
+   * <p>If either this value or couchdoop.expBackoff.maxTriesPerTask is reached the failure is
+   * ignored.</p>
+   */
+  public final static String CONF_EXP_BACKOFF_MAX_RETRY_INTERVAL_PER_TASK =
+      "couchdoop.expBackoff.maxRetryIntervalPerTask";
+  protected final static int EXP_BACKOFF_MAX_RETRY_INTERVAL = 1000; // ms
+
+  /**
+   * Maximum total time in milliseconds for a task to wait until retrying failed operations.
+   *
+   * <p>A task is failed if this value is reached.</p>
+   */
+  public final static String CONF_EXP_BACKOFF_MAX_TOTAL_TIMEOUT_PER_TASK =
+      "couchdoop.expBackoff.maxTotalTimeoutPerTask";
+  protected final static int EXP_BACKOFF_MAX_TOTAL_TIMEOUT = 60000; // ms
 
   public static class CouchbaseRecordWriter extends RecordWriter<String, CouchbaseAction> {
     
@@ -51,19 +80,22 @@ public class CouchbaseOutputFormat extends OutputFormat<String, CouchbaseAction>
 
     private long nonExistentTouchedKeys = 0;
     private long failedStoreOperations = 0;
+    private long timeoutOperations = 0;
+    private long totalTimeout = 0;
     private long existentKeys = 0;
     private int[] expBackoffCounters;
 
-    protected final static int EXP_BACKOFF_MAX_TRIES = 16;
-    protected final static int EXP_BACKOFF_MAX_RETRY_INTERVAL = 1000; // ms
+    protected int expBackoffMaxTries;
+    protected int expBackoffMaxRetryInterval; // ms
+    protected int expBackoffMaxTotalTimeout; // ms
 
-    public CouchbaseRecordWriter(List<URI> urls, String bucket, String password) throws IOException {
-      LOGGER.info("Connecting to Couchbase bucket {} by using URLs {}...",
-          bucket, urls, password);
+    public CouchbaseRecordWriter(List<URI> urls, String bucket, String password)
+        throws IOException {
+      LOGGER.info("Connecting to Couchbase bucket {} by using URLs {}...", bucket, urls, password);
       couchbaseClient = new CouchbaseClient(urls, bucket, password);
       LOGGER.info("Connected to Couchbase.");
 
-      expBackoffCounters = new int[EXP_BACKOFF_MAX_TRIES];
+      expBackoffCounters = new int[expBackoffMaxTries];
     }
 
     protected OperationFuture<Boolean> store(CouchbaseOperation operation,
@@ -108,13 +140,16 @@ public class CouchbaseOutputFormat extends OutputFormat<String, CouchbaseAction>
         try {
           res = future.get();
         } catch (Exception e) {
-          throw new RuntimeException(value.toString() + "; " + e.getMessage(), e);
+          res = false;
+
+          if (e.getCause() instanceof CheckedOperationTimeoutException) {
+            timeoutOperations++;
+          }
         }
         if (!res && value.getOperation().equals(CouchbaseOperation.TOUCH)) {
           nonExistentTouchedKeys++;
         }
 
-        // TODO See if false also means error.
         if (!res) {
           failedStoreOperations++;
           if (future.getStatus().getMessage().contains("exists")) {
@@ -122,16 +157,22 @@ public class CouchbaseOutputFormat extends OutputFormat<String, CouchbaseAction>
           }
         }
 
-        if (future.getStatus().isSuccess() || !future.getStatus().getMessage().equals("Temporary failure") ||
-            backoffExp >= EXP_BACKOFF_MAX_TRIES) {
+        if (future.getStatus().isSuccess()
+            || !future.getStatus().getMessage().equals("Temporary failure")
+            || backoffExp >= expBackoffMaxTries) {
           break;
         }
 
-        int retryInterval = Math.min((int) Math.pow(2, backoffExp), EXP_BACKOFF_MAX_RETRY_INTERVAL);
+        int retryInterval = Math.min((int) Math.pow(2, backoffExp), expBackoffMaxRetryInterval);
         Thread.sleep(retryInterval);
+        backoffExp++;
+        totalTimeout += retryInterval;
         expBackoffCounters[backoffExp]++;
 
-        backoffExp++;
+        // A task is only allowed to stay blocked for a maximum amount of time.
+        if (totalTimeout >= EXP_BACKOFF_MAX_TOTAL_TIMEOUT) {
+          throw new IOException("couchdoop.expBackoff.maxTotalTimeoutPerTask was reached!");
+        }
       } while (true);
     }
 
@@ -141,23 +182,47 @@ public class CouchbaseOutputFormat extends OutputFormat<String, CouchbaseAction>
       couchbaseClient.shutdown();
 
       if (failedStoreOperations > 0) {
-        context.getCounter(CouchbaseOutputFormat.class.getName(), "FAILED_STORE_OPERATIONS").increment(failedStoreOperations);
+        context.getCounter(CouchbaseOutputFormat.class.getName(), "FAILED_STORE_OPERATIONS")
+            .increment(failedStoreOperations);
+      }
+      if (timeoutOperations > 0) {
+        context.getCounter(CouchbaseOutputFormat.class.getName(), "TIMEOUT_OPERATIONS")
+            .increment(timeoutOperations);
+      }
+      if (totalTimeout > 0) {
+        context.getCounter(CouchbaseOutputFormat.class.getName(), "TOTAL_TIMEOUT")
+            .increment(totalTimeout);
       }
       if (existentKeys > 0) {
-        context.getCounter(CouchbaseOutputFormat.class.getName(), "EXISTANT_KEYS").increment(existentKeys);
+        context.getCounter(CouchbaseOutputFormat.class.getName(), "EXISTENT_KEYS")
+            .increment(existentKeys);
       }
 
       // Set counter for non existent touched keys if applicable.
       if (nonExistentTouchedKeys > 0) {
-        context.getCounter(CouchbaseOutputFormat.class.getName(), "NON_EXISTENT_TOUCHED_KEYS").increment(nonExistentTouchedKeys);
+        context.getCounter(CouchbaseOutputFormat.class.getName(), "NON_EXISTENT_TOUCHED_KEYS")
+            .increment(nonExistentTouchedKeys);
       }
       // Set counters for exponential back-off.
       for (int i = 0; i < expBackoffCounters.length; i++) {
         int expBackoffCounter = expBackoffCounters[i];
         if (expBackoffCounter > 0) {
-          context.getCounter(CouchbaseOutputFormat.class.getName(), "EXP_BACKOFF_COUNT_FOR_TRY_" + i).increment(expBackoffCounter);
+          context.getCounter(CouchbaseOutputFormat.class.getName(),
+              "EXP_BACKOFF_COUNT_FOR_TRY_" + i).increment(expBackoffCounter);
         }
       }
+    }
+
+    public void setExpBackoffMaxTries(int expBackoffMaxTries) {
+      this.expBackoffMaxTries = expBackoffMaxTries;
+    }
+
+    public void setExpBackoffMaxRetryInterval(int expBackoffMaxRetryInterval) {
+      this.expBackoffMaxRetryInterval = expBackoffMaxRetryInterval;
+    }
+
+    public void setExpBackoffMaxTotalTimeout(int expBackoffMaxTotalTimeout) {
+      this.expBackoffMaxTotalTimeout = expBackoffMaxTotalTimeout;
     }
   }
 
@@ -172,23 +237,38 @@ public class CouchbaseOutputFormat extends OutputFormat<String, CouchbaseAction>
     conf.set(CouchbaseArgs.ARG_COUCHBASE_PASSWORD.getPropertyName(), password);
   }
 
-  public RecordWriter<String, CouchbaseAction> getRecordWriter(TaskAttemptContext context) throws IOException, InterruptedException {
+  public RecordWriter<String, CouchbaseAction> getRecordWriter(TaskAttemptContext context)
+      throws IOException, InterruptedException {
+    Configuration conf = context.getConfiguration();
     ExportArgs args;
     try {
-      args = new ExportArgs(context.getConfiguration());
+      args = new ExportArgs(conf);
     } catch (ArgsException e) {
       throw new IllegalArgumentException(e);
     }
 
-    return new CouchbaseRecordWriter(args.getUrls(), args.getBucket(),
-        args.getPassword());
+    CouchbaseRecordWriter couchbaseRecordWriter =
+        new CouchbaseRecordWriter(args.getUrls(), args.getBucket(), args.getPassword());
+
+    couchbaseRecordWriter.setExpBackoffMaxTries(
+        conf.getInt(CONF_EXP_BACKOFF_MAX_TRIES_PER_TASK, EXP_BACKOFF_MAX_TRIES)
+    );
+    couchbaseRecordWriter.setExpBackoffMaxRetryInterval(
+        conf.getInt(CONF_EXP_BACKOFF_MAX_RETRY_INTERVAL_PER_TASK, EXP_BACKOFF_MAX_RETRY_INTERVAL)
+    );
+    couchbaseRecordWriter.setExpBackoffMaxTotalTimeout(
+        conf.getInt(CONF_EXP_BACKOFF_MAX_TOTAL_TIMEOUT_PER_TASK, EXP_BACKOFF_MAX_TOTAL_TIMEOUT)
+    );
+
+    return couchbaseRecordWriter;
   }
 
   @Override
   public void checkOutputSpecs(JobContext context) throws IOException, InterruptedException {}
 
   @Override
-  public OutputCommitter getOutputCommitter(TaskAttemptContext context) throws IOException, InterruptedException {
+  public OutputCommitter getOutputCommitter(TaskAttemptContext context)
+      throws IOException, InterruptedException {
     return new FileOutputCommitter(FileOutputFormat.getOutputPath(context), context);
   }
 }
