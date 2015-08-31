@@ -48,8 +48,8 @@ public class CouchbaseOutputFormat extends OutputFormat<String, CouchbaseAction>
   /**
    * How many times should failed operation be retried before ignoring the failure.
    *
-   * If either this value or couchdoop.expBackoff.maxRetryIntervalPerTask is reached the failure is
-   * ignored.
+   * <p>If either this value or couchdoop.expBackoff.maxRetryIntervalPerTask is reached the failure
+   * is ignored.</p>
    */
   public final static String CONF_EXP_BACKOFF_MAX_TRIES_PER_TASK =
       "couchdoop.expBackoff.maxTriesPerTask";
@@ -58,8 +58,8 @@ public class CouchbaseOutputFormat extends OutputFormat<String, CouchbaseAction>
   /**
    * Maximum number of milliseconds to wait until retrying a failed operation.
    *
-   * If either this value or couchdoop.expBackoff.maxTriesPerTask is reached the failure is
-   * ignored.
+   * <p>If either this value or couchdoop.expBackoff.maxTriesPerTask is reached the failure is
+   * ignored.</p>
    */
   public final static String CONF_EXP_BACKOFF_MAX_RETRY_INTERVAL_PER_TASK =
       "couchdoop.expBackoff.maxRetryIntervalPerTask";
@@ -68,7 +68,7 @@ public class CouchbaseOutputFormat extends OutputFormat<String, CouchbaseAction>
   /**
    * Maximum total time in milliseconds for a task to wait until retrying failed operations.
    *
-   * A task is failed if this value is reached.
+   * <p>A task is failed if this value is reached.</p>
    */
   public final static String CONF_EXP_BACKOFF_MAX_TOTAL_TIMEOUT_PER_TASK =
       "couchdoop.expBackoff.maxTotalTimeoutPerTask";

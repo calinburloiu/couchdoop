@@ -354,6 +354,17 @@ need to be implemented:
 * `merge` method computes a new Couchbase document by using a value extracted
   from Hadoop storage and an existing Couchbase document.
 
+Advanced Configuration Parameters
+---------------------------------
+
+### Exporting ###
+
+| Configuration Property                         | Description
+| ---------------------------------------------- | -----------
+| `couchdoop.expBackoff.maxTriesPerTask`         | How many times should failed operation be retried before ignoring the failure. If either this value or `couchdoop.expBackoff.maxRetryIntervalPerTask` is reached the failure is ignored.
+| `couchdoop.expBackoff.maxRetryIntervalPerTask` | Maximum number of milliseconds to wait until retrying a failed operation. If either this value or `couchdoop.expBackoff.maxTriesPerTask` is reached the failure is ignored.
+| `couchdoop.expBackoff.maxTotalTimeoutPerTask`  | Maximum total time in milliseconds for a task to wait until retrying failed operations. A task is failed if this value is reached.
+
 Running Couchdoop on Spark
 --------------------------
 
