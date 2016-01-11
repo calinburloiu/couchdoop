@@ -5,7 +5,7 @@
 
   <groupId>com.avira.couchdoop</groupId>
   <artifactId>couchdoop</artifactId>
-  <version>1.8.5</version>
+  <version>1.8.6</version>
   <packaging>jar</packaging>
 
   <name>${project.groupId}:${project.artifactId}</name>
@@ -31,9 +31,6 @@
   <developers>
     <developer>
       <name>Călin-Andrei Burloiu</name>
-      <email>calin.burloiu@gmail.com</email>
-      <organization>Avira Operations GmbH &amp; Co. KG</organization>
-      <organizationUrl>http://www.avira.com</organizationUrl>
       <url>https://github.com/calinburloiu</url>
       <roles>
         <role>Project Lead</role>
@@ -41,9 +38,6 @@
     </developer>
     <developer>
       <name>Radu Pastia</name>
-      <email>radu@pastia.ro</email>
-      <organization>Orange S.A.</organization>
-      <organizationUrl>http://www.orange.com</organizationUrl>
       <url>https://github.com/rpastia</url>
     </developer>
     <developer>
